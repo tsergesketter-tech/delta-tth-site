@@ -36,14 +36,17 @@ export type Badge = {
 
 export type Trip = {
   id: string;
-  stayId?: string;
-  propertyName?: string;
-  city?: string;
-  checkInISO?: string;
-  checkOutISO?: string;
+  flightId?: string;
+  flightNumber?: string;
+  fromCity?: string;
+  toCity?: string;
+  departureISO?: string;
+  arrivalISO?: string;
   confirmation?: string;
   status: "Booked" | "Completed" | "Cancelled" | "Hold";
   estMiles?: number;
+  aircraft?: string;
+  seatClass?: string;
 };
 
 export type WalletItem = {
@@ -87,49 +90,55 @@ export const DEMO_VOUCHERS: Voucher[] = [
 export const DEMO_BADGES: Badge[] = [
   {
     id: "b1",
-    name: "Weekend Warrior",
-    icon: "🏕️",
+    name: "Jet Setter",
+    icon: "✈️",
     earnedOn: "2025-06-21",
-    description: "3 weekend stays in a quarter.",
+    description: "5 flights in a quarter.",
   },
   {
     id: "b2",
-    name: "City Hopper",
-    icon: "🏙️",
+    name: "Globe Trotter",
+    icon: "🌍",
     earnedOn: "2025-04-09",
-    description: "Stays in 3 distinct cities.",
+    description: "Flights to 3 different continents.",
   },
   {
     id: "b3",
-    name: "Early Bird",
-    icon: "🌅",
+    name: "Red Eye Flyer",
+    icon: "🌙",
     earnedOn: "2025-03-12",
-    description: "Check-in before 8am once.",
+    description: "Completed an overnight flight.",
   },
 ];
 
 export const DEMO_TRIPS: Trip[] = [
   {
     id: "t1",
-    stayId: "sea-1",
-    propertyName: "Reverie Seattle Downtown",
-    city: "Seattle",
-    checkInISO: "2025-09-05",
-    checkOutISO: "2025-09-08",
-    confirmation: "BK-49622003",
+    flightId: "DL-1234",
+    flightNumber: "DL 1234",
+    fromCity: "Atlanta (ATL)",
+    toCity: "Seattle (SEA)",
+    departureISO: "2025-09-05T08:30:00",
+    arrivalISO: "2025-09-05T11:45:00",
+    confirmation: "PNRXYZ123",
     status: "Booked",
-    estMiles: 3200,
+    estMiles: 2000,
+    aircraft: "Boeing 757-200",
+    seatClass: "First Class",
   },
   {
     id: "t2",
-    stayId: "chi-2",
-    propertyName: "Lakeshore Suites",
-    city: "Chicago",
-    checkInISO: "2025-07-11",
-    checkOutISO: "2025-07-13",
-    confirmation: "BK-47291110",
+    flightId: "DL-5678",
+    flightNumber: "DL 5678",
+    fromCity: "Chicago (ORD)",
+    toCity: "New York (JFK)",
+    departureISO: "2025-07-11T14:20:00",
+    arrivalISO: "2025-07-11T17:35:00",
+    confirmation: "PNRABC456",
     status: "Completed",
-    estMiles: 1800,
+    estMiles: 1200,
+    aircraft: "Airbus A321",
+    seatClass: "Delta Comfort+",
   },
 ];
 

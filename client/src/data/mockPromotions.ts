@@ -3,10 +3,10 @@
 export const MOCK_PROMOTIONS = [
   {
     id: "mock1",
-    name: "Earn 3,000 Bonus Miles with Reverie Hotels",
+    name: "Double SkyMiles on Transatlantic Flights",
     description:
-      "Book two nights or more at participating Reverie Hotels and receive 3,000 bonus SkyMiles.",
-    imageUrl: "https://picsum.photos/seed/reverie/400/240",
+      "Fly to Europe on Delta and earn 2x SkyMiles on all qualifying flights through September.",
+    imageUrl: "https://picsum.photos/seed/europe/400/240",
     startDate: "2025-08-01",
     endDate: "2025-09-30",
     eligibility: "All Members",
@@ -14,21 +14,21 @@ export const MOCK_PROMOTIONS = [
   },
   {
     id: "mock2",
-    name: "Double Nights Credit – September Stays",
+    name: "Medallion Qualification Miles Bonus",
     description:
-      "Stay anytime in September and receive 2x qualifying night credits toward elite status.",
-    imageUrl: "https://picsum.photos/seed/doublenights/400/240",
+      "Fly anywhere in September and receive 500 bonus MQMs per roundtrip flight.",
+    imageUrl: "https://picsum.photos/seed/mqms/400/240",
     startDate: "2025-09-01",
     endDate: "2025-09-30",
-    eligibility: "Silver tier and above",
+    eligibility: "Silver Medallion and above",
     enrollmentRequired: false,
   },
   {
     id: "mock3",
-    name: "Avis Weekend Getaway Bonus",
+    name: "Weekend Domestic Flight Bonus",
     description:
-      "Rent with Avis for 3+ days on weekends and earn 1,500 bonus miles.",
-    imageUrl: "https://picsum.photos/seed/avis/400/240",
+      "Book weekend flights within the US and earn 1,500 bonus SkyMiles per roundtrip.",
+    imageUrl: "https://picsum.photos/seed/weekend/400/240",
     startDate: "2025-08-15",
     endDate: "2025-11-15",
     eligibility: "All Members",
@@ -47,24 +47,24 @@ export const MOCK_PROMOTIONS = [
   },
   {
     id: "mock5",
-    name: "Spend $5,000, Earn 20,000 Bonus MQMs",
+    name: "Delta SkyMiles Credit Card Bonus",
     description:
-      "Spend $5,000 with your co-branded credit card this quarter and receive 20,000 bonus Medallion Qualification Miles.",
+      "Spend $3,000 with your Delta SkyMiles credit card in 3 months and earn 60,000 bonus SkyMiles plus 10,000 MQMs.",
     imageUrl: "https://picsum.photos/seed/card/400/240",
     startDate: "2025-07-01",
     endDate: "2025-09-30",
-    eligibility: "Cardholders only",
+    eligibility: "New cardholders only",
     enrollmentRequired: true,
   },
   {
     id: "mock6",
-    name: "Retail Partner Bonus – SkyMall",
+    name: "Delta Sky Club Day Pass Promotion",
     description:
-      "Shop with SkyMall and earn 500 extra miles on your first $100 spend.",
-    imageUrl: "https://picsum.photos/seed/retail/400/240",
+      "Purchase 3 Sky Club day passes and get the 4th free. Valid at all Delta Sky Clubs worldwide.",
+    imageUrl: "https://picsum.photos/seed/skyclub/400/240",
     startDate: "2025-08-20",
     endDate: "2025-10-20",
-    eligibility: "All Members",
+    eligibility: "All travelers",
     enrollmentRequired: false,
   },
 ];

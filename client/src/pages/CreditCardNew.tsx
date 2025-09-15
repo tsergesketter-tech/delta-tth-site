@@ -1,7 +1,7 @@
 // client/src/pages/PaloniaCreditCards.tsx
 import React, { useMemo, useState } from "react";
 
-export default function PaloniaCreditCards() {
+export default function DeltaCreditCards() {
   const [tab, setTab] = useState<"personal" | "business">("personal");
   const [compare, setCompare] = useState<Record<string, boolean>>({});
   const year = useMemo(() => new Date().getFullYear(), []);
@@ -34,17 +34,17 @@ export default function PaloniaCreditCards() {
             Limited-Time Offer
           </span>
           <h1 className="mt-3 text-3xl font-extrabold leading-tight md:text-4xl">
-            Earn up to 185,000 Palonia® Points
+            Earn up to 90,000 SkyMiles®
           </h1>
           <p className="mt-2 text-gray-200">
-            Plus, enjoy complimentary Platinum Elite status for your first cardmember year. Offers end soon. Terms apply.
+            Plus, enjoy complimentary Silver Medallion Status for your first cardmember year. Offers end soon. Terms apply.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
-            <a href="#cards" className="inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-700">
+            <a href="#cards" className="inline-flex items-center rounded-full bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700">
               See Cards
             </a>
             <a href="#detail" className="inline-flex items-center rounded-full border border-white/30 bg-white/10 px-4 py-2 font-semibold hover:bg-white/20">
-              How Points Work
+              How SkyMiles Work
             </a>
           </div>
         </div>
@@ -52,7 +52,7 @@ export default function PaloniaCreditCards() {
 
       {/* Cards */}
       <section id="cards" className="container mx-auto max-w-6xl px-4 py-14">
-        <h2 className="text-center text-3xl font-bold md:text-4xl">Choose a Palonia® Credit Card</h2>
+        <h2 className="text-center text-3xl font-bold md:text-4xl">Choose a Delta SkyMiles® Credit Card</h2>
 
         {/* Tabs */}
         <div className="mt-5 flex justify-center gap-6 text-gray-500">

@@ -83,13 +83,13 @@ const Hero = () => {
           {/* Default content - will be replaced by Evergage */}
           <div id="hero-default-content">
             <h1 className="text-4xl md:text-6xl font-bold mb-4">
-              Save 10% on Select Stays with Palonia
+              Fly the World with Delta
             </h1>
             <p className="text-lg md:text-xl mb-6">
-              Stay 2+ nights and earn & redeem points on select rooms.
+              Book flights, earn SkyMiles, and experience exceptional service to destinations worldwide.
             </p>
-            <button className="bg-white text-black font-semibold px-6 py-3 rounded hover:bg-gray-100">
-              Browse Rooms
+            <button className="bg-red-600 text-white font-semibold px-6 py-3 rounded hover:bg-red-700">
+              Search Flights
             </button>
           </div>
         </div>
