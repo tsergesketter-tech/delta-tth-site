@@ -1,0 +1,154 @@
+export type BookingState = "ACTIVE" | "PARTIALLY_CANCELLED" | "FULLY_CANCELLED" | "PENDING_CANCELLATION";
+export type LineOfBusiness = "FLIGHT" | "HOTEL" | "CAR" | "PACKAGE";
+export type LineItemStatus = "ACTIVE" | "CANCELLED" | "CANCELLING" | "PENDING_CANCELLATION";
+export type BookingLineItem = {
+    id: string;
+    lob: LineOfBusiness;
+    cashAmount?: number;
+    pointsRedeemed?: number;
+    pointsEarned?: number;
+    currency?: string;
+    taxes?: number;
+    fees?: number;
+    productName?: string;
+    productCode?: string;
+    startDate?: string;
+    endDate?: string;
+    nights?: number;
+    destinationCity?: string;
+    destinationCountry?: string;
+    redemptionJournalId?: string;
+    accrualJournalId?: string;
+    status: LineItemStatus;
+    cancelledAt?: string;
+    cancellationReason?: string;
+    cancelledBy?: string;
+    createdAt: string;
+    updatedAt: string;
+};
+export type TripBooking = {
+    id: string;
+    externalTransactionNumber: string;
+    memberId?: string;
+    membershipNumber?: string;
+    bookingDate: string;
+    tripStartDate?: string;
+    tripEndDate?: string;
+    channel?: string;
+    posa?: string;
+    paymentMethod?: string;
+    lineItems: BookingLineItem[];
+    status: BookingState;
+    totalCashAmount: number;
+    totalTaxesAndFees: number;
+    totalPointsRedeemed: number;
+    totalPointsEarned: number;
+    createdAt: string;
+    updatedAt: string;
+    createdBy?: string;
+    notes?: string;
+    internalReference?: string;
+};
+export type CreateBookingRequest = {
+    externalTransactionNumber: string;
+    memberId?: string;
+    membershipNumber?: string;
+    bookingDate?: string;
+    tripStartDate?: string;
+    tripEndDate?: string;
+    channel?: string;
+    posa?: string;
+    paymentMethod?: string;
+    lineItems: Omit<BookingLineItem, 'id' | 'status' | 'createdAt' | 'updatedAt'>[];
+    notes?: string;
+    createdBy?: string;
+};
+export type UpdateBookingRequest = Partial<CreateBookingRequest> & {
+    id: string;
+};
+export type BookingResponse = TripBooking & {
+    _meta?: {
+        journalsPosted?: boolean;
+        lastSyncedAt?: string;
+        salesforceBookingId?: string;
+    };
+};
+export type BookingListResponse = {
+    bookings: BookingResponse[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    hasMore: boolean;
+};
+export type CancellationRequest = {
+    bookingId: string;
+    lineItemIds?: string[];
+    reason?: string;
+    requestedBy?: string;
+};
+export type CancellationStepType = "REDEMPTION_REFUND" | "ACCRUAL_CANCEL";
+export type CancellationStepStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+export type LoyaltyLedger = {
+    id: string;
+    eventType: string;
+    loyaltyProgramCurrency: string;
+    points: number;
+    transactionJournalId?: string;
+};
+export type CancellationStep = {
+    type: CancellationStepType;
+    lineItemId: string;
+    lob: LineOfBusiness;
+    journalId: string;
+    amount: number;
+    currency?: string;
+    loyaltyLedgers?: LoyaltyLedger[];
+    status: CancellationStepStatus;
+    startedAt?: string;
+    completedAt?: string;
+    error?: string;
+    salesforceResponse?: any;
+    cancellationId?: string;
+};
+export type CancellationPlan = {
+    bookingId: string;
+    lineItemIds: string[];
+    reason?: string;
+    requestedBy?: string;
+    steps: CancellationStep[];
+    totalPointsToRefund: number;
+    totalPointsToCancel: number;
+    netPointsChange: number;
+    totalCashRefund: number;
+    createdAt: string;
+};
+export type CancellationResult = {
+    plan: CancellationPlan;
+    steps: CancellationStep[];
+    success: boolean;
+    completedAt: string;
+    actualPointsRefunded: number;
+    actualPointsCancelled: number;
+    actualCashRefund: number;
+    errors?: string[];
+    partialSuccess: boolean;
+};
+export type BookingFilters = {
+    membershipNumber?: string;
+    memberId?: string;
+    status?: BookingState;
+    dateFrom?: string;
+    dateTo?: string;
+    lob?: LineOfBusiness;
+    externalTransactionNumber?: string;
+};
+export type BookingSummary = {
+    id: string;
+    externalTransactionNumber: string;
+    status: BookingState;
+    bookingDate: string;
+    totalCashAmount: number;
+    totalPointsRedeemed: number;
+    lineItemCount: number;
+    lobTypes: LineOfBusiness[];
+};
