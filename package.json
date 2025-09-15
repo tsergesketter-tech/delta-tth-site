@@ -13,7 +13,7 @@
     "client:dev": "npm --prefix client start",
     "server:dev": "npm --prefix server run dev",
     "rebuild": "cd client && npm run build && cd .. && cd server && node dist/index.js",
-    "postinstall": "npm run build -w shared"
+    "postinstall": "echo 'Skip shared build for now'"
   },
   "engines": {
     "node": "20.x",
