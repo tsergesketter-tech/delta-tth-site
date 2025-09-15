@@ -20,6 +20,8 @@
   "include": ["src"],
   "exclude": [
     "postcss.config.js",
-    "tailwind.config.js"
+    "tailwind.config.js",
+    "src/**/*.test.tsx",
+    "src/**/*.test.ts"
   ]
 }
