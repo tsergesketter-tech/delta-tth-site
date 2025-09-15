@@ -143,9 +143,9 @@ export default function SearchBar() {
       setHi((i) => Math.max(i - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      const chosen = hi >= 0 && suggestions[hi] ? suggestions[hi] : location;
+      const chosen = hi >= 0 && suggestions[hi] ? suggestions[hi] : fromLocation;
       if (chosen.trim()) {
-        setLocation(chosen);
+        setFromLocation(chosen);
         setOpenList(false);
         setOpenCal(true);
       }
