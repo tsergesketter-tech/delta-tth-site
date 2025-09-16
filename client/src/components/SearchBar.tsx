@@ -137,13 +137,13 @@ export default function SearchBar() {
     }
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setHi((i) => Math.min(i + 1, suggestions.length - 1));
+      setHi((i) => Math.min(i + 1, fromSuggestions.length - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setHi((i) => Math.max(i - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      const chosen = hi >= 0 && suggestions[hi] ? suggestions[hi] : fromLocation;
+      const chosen = hi >= 0 && fromSuggestions[hi] ? fromSuggestions[hi] : fromLocation;
       if (chosen.trim()) {
         setFromLocation(chosen);
         setOpenList(false);
@@ -234,16 +234,16 @@ export default function SearchBar() {
           value={toLocation}
           onChange={(e) => setToLocation(e.target.value)}
         />
-        {openList && suggestions.length > 0 && (
+        {openList && fromSuggestions.length > 0 && (
           <ul
             id="typeahead-listbox"
             role="listbox"
             className="absolute z-[9999] mt-2 max-h-80 w-full overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg"
             style={{ top: '100%', left: 0, right: 0 }}
           >
-            {suggestions.map((city, idx) => (
+            {fromSuggestions.map((airport, idx) => (
               <li
-                key={city}
+                key={airport}
                 role="option"
                 aria-selected={idx === hi}
                 className={`flex cursor-pointer items-start gap-3 px-3 py-2 ${
@@ -252,16 +252,16 @@ export default function SearchBar() {
                 onMouseEnter={() => setHi(idx)}
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  setLocation(city);
+                  setFromLocation(airport);
                   setOpenList(false);
                   setOpenCal(true);
                 }}
               >
-                <span className="mt-0.5">📍</span>
+                <span className="mt-0.5">✈️</span>
                 <div>
-                  <div className="font-medium text-gray-900">{city.split(",")[0]}</div>
+                  <div className="font-medium text-gray-900">{airport.split(" - ")[0]}</div>
                   <div className="text-xs text-gray-600">
-                    {city.split(",").slice(1).join(",")}
+                    {airport.split(" - ")[1]}
                   </div>
                 </div>
               </li>
