@@ -347,16 +347,16 @@ export default function SearchBar() {
         )}
       </div>
 
-      {/* Guests + submit */}
+      {/* Passengers + submit */}
       <div className="flex items-end gap-2">
         <div className="flex-1">
-          <label className="text-sm font-medium text-gray-700">Guests</label>
+          <label className="text-sm font-medium text-gray-700">Passengers</label>
           <input
             type="number"
             min={1}
             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            value={guests}
-            onChange={(e) => setGuests(Math.max(1, Number(e.target.value)))}
+            value={passengers}
+            onChange={(e) => setPassengers(Math.max(1, Number(e.target.value)))}
           />
         </div>
         <button
