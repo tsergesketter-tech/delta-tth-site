@@ -7,250 +7,139 @@ import {
   useLocation,
 } from "react-router-dom";
 
-import { usePointsSimulation } from "../hooks/usePointsSimulation";
-import { useEligiblePromotions } from "../hooks/useEligiblePromotions";
-import EstimatedPoints from "../components/EstimatedPoints";
-import RedemptionForm from "../components/RedemptionForm";
-import PromotionDisplay from "../components/PromotionDisplay";
-import { 
-  postStayAccrual, 
-  buildAccrualFromCheckout,
-  postStayRedemption,
-  buildRedemptionFromCheckout
-} from "../utils/loyaltyTransactions";
-import { 
-  POINT_VALUE_USD, 
-  pointsToUSD, 
-  formatPointsAsCurrency,
-  MIN_REDEMPTION_POINTS,
-  MAX_REDEMPTION_POINTS
-} from "@teddy/shared";
+import { DEMO_MEMBER } from "../constants/loyalty";
 
-type Room = {
-  code: string;
-  name: string;
-  nightlyRate: number;
-  refundable: boolean;
-};
-type Stay = {
+type Flight = {
   id: string;
-  name: string;
-  city: string;
-  nightlyRate: number;
-  currency?: string;
-  gallery?: string[];
-  rooms?: Room[];
-  fees?: { taxesPct: number; resortFee: number };
+  airline: string;
+  flightNumber: string;
+  departure: {
+    time: string;
+    airport: string;
+    code: string;
+  };
+  arrival: {
+    time: string;
+    airport: string;
+    code: string;
+  };
+  duration: string;
+  aircraft: string;
+  stops: number;
+  prices: {
+    main: number;
+    comfort: number;
+    business: number;
+    first: number;
+  };
+  amenities: string[];
 };
+
+type FareClass = 'main' | 'comfort' | 'business' | 'first';
+
+const fareClassLabels = {
+  main: 'Main',
+  comfort: 'Comfort+',
+  business: 'Business',
+  first: 'First'
+};
+
+// Sample flight data for demo (in real app, this would come from API)
+const sampleFlights: Flight[] = [
+  {
+    id: "DL3134",
+    airline: "Delta",
+    flightNumber: "DL3134",
+    departure: { time: "4:40pm", airport: "Indianapolis", code: "IND" },
+    arrival: { time: "6:25pm", airport: "Atlanta", code: "ATL" },
+    duration: "1h 45m",
+    aircraft: "Airbus A320",
+    stops: 0,
+    prices: { main: 545, comfort: 745, business: 1245, first: 1845 },
+    amenities: ["Free Wi-Fi for SkyMiles Members", "Live TV", "Power Outlets"]
+  },
+  {
+    id: "DL2891",
+    airline: "Delta",
+    flightNumber: "DL2891",
+    departure: { time: "7:45am", airport: "Atlanta", code: "ATL" },
+    arrival: { time: "9:35am", airport: "Indianapolis", code: "IND" },
+    duration: "1h 50m",
+    aircraft: "Airbus A320",
+    stops: 0,
+    prices: { main: 565, comfort: 765, business: 1265, first: 1865 },
+    amenities: ["Free Wi-Fi for SkyMiles Members", "Live TV", "Power Outlets"]
+  }
+];
 
 export default function Checkout() {
   const [params] = useSearchParams();
-  const location = useLocation() as any;
   const navigate = useNavigate();
 
-  // 1) From query params
-  const stayFromUrl = params.get("stay") || params.get("stayId") || "";
-  const roomFromUrl = params.get("room") || "";
-  const guestsFromUrl = params.get("guests") || "1";
-  const nightsParam = Number(params.get("nights"));
-  const nightsFromUrl =
-    Number.isFinite(nightsParam) && nightsParam > 0 ? nightsParam : 1;
-  const checkInFromUrl = params.get("checkIn") || "";
-  const checkOutFromUrl = params.get("checkOut") || "";
+  // Flight booking parameters from URL
+  const outboundFlight = useMemo(() => params.get("outboundFlight") || "", [params]);
+  const outboundFareClass = useMemo(() => params.get("outboundFareClass") || "main", [params]);
+  const outboundPrice = useMemo(() => Number(params.get("outboundPrice")) || 0, [params]);
+  const inboundFlight = useMemo(() => params.get("inboundFlight") || "", [params]);
+  const inboundFareClass = useMemo(() => params.get("inboundFareClass") || "main", [params]);
+  const inboundPrice = useMemo(() => Number(params.get("inboundPrice")) || 0, [params]);
+  const passengers = useMemo(() => params.get("passengers") || "1", [params]);
+  const totalPrice = useMemo(() => Number(params.get("totalPrice")) || (outboundPrice + inboundPrice), [params, outboundPrice, inboundPrice]);
 
-  // 2) From router state (set during post-login restore)
-  const stateCtx = location.state?.ctx || null;
-
-  // 3) Defensive session fallback
-  const stored = (() => {
-    try {
-      return JSON.parse(sessionStorage.getItem("postLogin") || "null");
-    } catch {
-      return null;
-    }
-  })();
-
-  const stayId =
-    stayFromUrl || stateCtx?.stayId || stored?.ctx?.stayId || "";
-  const roomCode =
-    roomFromUrl || stateCtx?.roomCode || stored?.ctx?.roomCode || "";
-  const guests =
-    guestsFromUrl || stateCtx?.guests || stored?.ctx?.guests || "1";
-  const nights =
-    nightsFromUrl || stateCtx?.nights || stored?.ctx?.nights || 1;
-  const checkInISO =
-    checkInFromUrl || stateCtx?.checkIn || stored?.ctx?.checkIn || "";
-  const checkOutISO =
-    checkOutFromUrl || stateCtx?.checkOut || stored?.ctx?.checkOut || "";
-
-  const [loading, setLoading] = useState(true);
-  const [stay, setStay] = useState<Stay | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        if (!stayId) throw new Error("Missing stay id");
-        const base = window.location.origin;
-
-        let res = await fetch(
-          `${base}/api/stays/${encodeURIComponent(stayId)}`,
-          { credentials: "include" }
-        );
-        if (!res.ok) {
-          res = await fetch(
-            `${base}/api/stays/by-slug/${encodeURIComponent(stayId)}`,
-            { credentials: "include" }
-          );
-          if (!res.ok) throw new Error(`Stay not found (${stayId})`);
-        }
-        const data: Stay = await res.json();
-        setStay(data || null);
-      } catch (e: any) {
-        setError(e.message || "Failed to load checkout");
-        setStay(null);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [stayId]);
-
-  const selectedRoom = useMemo(
-    () => (stay?.rooms || []).find((r) => r.code === roomCode) || null,
-    [stay, roomCode]
+  // Get flight details from sample data (in real app, would fetch from API)
+  const outboundFlightData = useMemo(() =>
+    sampleFlights.find(f => f.id === outboundFlight),
+    [outboundFlight]
+  );
+  const inboundFlightData = useMemo(() =>
+    sampleFlights.find(f => f.id === inboundFlight),
+    [inboundFlight]
   );
 
-  const currency = stay?.currency || "USD";
+  // Validate required flight data
+  useEffect(() => {
+    if (!outboundFlight || !inboundFlight || !outboundFlightData || !inboundFlightData) {
+      setError("Missing flight selection data");
+    } else {
+      setError(null);
+    }
+  }, [outboundFlight, inboundFlight, outboundFlightData, inboundFlightData]);
+
+  const currency = "USD";
   const fmt = (n: number) =>
     n.toLocaleString(undefined, { style: "currency", currency });
 
   const price = useMemo(() => {
-    const nightly = selectedRoom?.nightlyRate ?? stay?.nightlyRate ?? 0;
-    const taxesPct = stay?.fees?.taxesPct ?? 0;
-    const resortFeePerNight = stay?.fees?.resortFee ?? 0;
-
-    const subtotalNights = nightly * nights;
-    const resortFees = resortFeePerNight * nights;
-    const taxes = +(subtotalNights * taxesPct).toFixed(2);
-    const total = +(subtotalNights + resortFees + taxes).toFixed(2);
+    const subtotal = outboundPrice + inboundPrice;
+    const taxesPct = 0.08; // 8% taxes for flights
+    const taxes = +(subtotal * taxesPct).toFixed(2);
+    const total = +(subtotal + taxes).toFixed(2);
 
     return {
-      nightly,
+      outboundPrice,
+      inboundPrice,
+      subtotal,
       taxesPct,
-      resortFeePerNight,
-      subtotalNights,
-      resortFees,
       taxes,
       total,
     };
-  }, [stay, selectedRoom, nights]);
+  }, [outboundPrice, inboundPrice]);
 
-  // === Points Simulation ===
-  const membershipNumber = "DL12345";
-  const program = "Cars and Stays by Delta";
-
-  // === Eligible Promotions ===
-  const promotions = useEligiblePromotions({
-    membershipNumber,
-    debugMode: false
-  });
-
-  // Fetch promotions when stay and pricing are available
-  useEffect(() => {
-    if (stay && !loading && price.total > 0) {
-      const stayForPromotion = {
-        id: stay.id,
-        name: stay.name,
-        city: stay.city,
-        pricePerNight: selectedRoom?.nightlyRate || stay.nightlyRate || 0,
-        checkIn: checkInISO
-      };
-
-      promotions.fetchPromotionsForStay(stayForPromotion, nights);
-    }
-  }, [stay, loading, price.total, nights, selectedRoom, checkInISO]);
-
-  // Calculate final price with promotions applied
-  const promotionDiscount = promotions.calculation?.totalDiscount || 0;
-  const priceAfterPromotions = useMemo(
-    () => Math.max(0, price.total - promotionDiscount),
-    [price.total, promotionDiscount]
-  );
-
-  // === Redemption (Real implementation) ===
-  const [redeemPoints, setRedeemPoints] = useState<number>(0);
-  const [redemptionError, setRedemptionError] = useState<string | null>(null);
-  
-  // Calculate redemption credit using configurable point value
-  const redeemCredit = useMemo(
-    () => pointsToUSD(Math.max(0, redeemPoints)),
-    [redeemPoints]
-  );
-  
-  // Calculate final total after promotions and point redemption
-  const adjustedTotal = useMemo(
-    () => +(Math.max(0, priceAfterPromotions - redeemCredit)).toFixed(2),
-    [priceAfterPromotions, redeemCredit]
-  );
-
-  const simInput = useMemo(() => {
-    if (!stay || !checkInISO || !checkOutISO) return [];
-    const originalNightly = selectedRoom?.nightlyRate ?? stay.nightlyRate ?? 0;
-    if (!originalNightly) return [];
-    
-    // Calculate adjusted nightly rate after redemption
-    const originalTotal = originalNightly * nights;
-    const adjustedNightly = originalTotal > 0 
-      ? (adjustedTotal / nights) 
-      : 0;
-    
-    return [
-      {
-        stayId: stay.id,
-        propertyName: stay.name,
-        city: stay.city,
-        checkInISO,
-        checkOutISO,
-        nightlyRate: Math.max(0, adjustedNightly), // Use adjusted rate for simulation
-        currency: stay.currency ?? "USD",
-        nights,
-      },
-    ];
-  }, [
-    stay?.id,
-    stay?.name,
-    stay?.city,
-    stay?.currency,
-    selectedRoom?.nightlyRate,
-    checkInISO,
-    checkOutISO,
-    nights,
-    adjustedTotal, // Include adjustedTotal in dependencies
-  ]);
-
-  const {
-    loading: simLoading,
-    getEstimate,
-    error: simError,
-  } = usePointsSimulation({
-    stays: simInput,
-    program,
-    membershipNumber,
-    maxBatch: 1,
-  });
-  const estimate = simInput.length ? getEstimate(simInput[0]) : null;
+  // For simplicity, we'll just use the base flight price
+  const finalTotal = price.total;
 
 
   if (loading)
     return <div className="mx-auto max-w-4xl p-6">Loading checkout…</div>;
 
-  if (error || !stay) {
+  if (error || !outboundFlightData || !inboundFlightData) {
     return (
       <div className="mx-auto max-w-4xl p-6">
         <div className="rounded-xl bg-red-50 p-6 text-red-700 shadow">
-          {error || "Not found"}
+          {error || "Flight selection not found"}
         </div>
         <div className="mt-4">
           <Link to="/search" className="text-indigo-600 hover:underline">
@@ -261,140 +150,73 @@ export default function Checkout() {
     );
   }
 
-  const s = stay as NonNullable<typeof stay>;
-
-  if (!selectedRoom) {
-    const backHref = `/stay/${encodeURIComponent(
-      s.id
-    )}?guests=${encodeURIComponent(guests)}&nights=${encodeURIComponent(
-      String(nights)
-    )}&checkIn=${encodeURIComponent(checkInISO)}&checkOut=${encodeURIComponent(
-      checkOutISO
-    )}`;
-    return (
-      <div className="mx-auto max-w-4xl p-6">
-        <div className="rounded-xl bg-yellow-50 p-6 text-yellow-800 shadow">
-          Room not found. Please pick another room.
-        </div>
-        <div className="mt-4">
-          <Link to={backHref} className="text-indigo-600 hover:underline">
-            Back to property
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const r = selectedRoom as NonNullable<typeof selectedRoom>;
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    let bookingId = `BK-${Date.now()}`;
+    // Ensure we have flight data before proceeding
+    if (!outboundFlightData || !inboundFlightData) {
+      setError("Missing flight data. Please restart your booking.");
+      return;
+    }
 
-    // 1. Create booking in your local system
+    let bookingId = `FL-${Date.now()}`;
+
+    // 1. Create flight booking in your local system
     try {
-      const res = await fetch("/api/bookings", {
+      const res = await fetch("/api/flight-bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           externalTransactionNumber: bookingId,
-          membershipNumber: "DL12345", // Use consistent member number
+          membershipNumber: DEMO_MEMBER.MEMBERSHIP_NUMBER,
           channel: "Web",
           posa: "US",
           bookingDate: new Date().toISOString().slice(0, 10),
-          tripStartDate: checkInISO.slice(0, 10),
-          tripEndDate: checkOutISO.slice(0, 10),
-          lineItems: [{
-            lob: "HOTEL",
-            productCode: r.code,
-            productName: r.name,
-            productDescription: `${s.name} - ${s.city}`,
-            quantity: nights,
-            unitPrice: r.nightlyRate,
-            cashAmount: adjustedTotal,
+          passengers: Number(passengers),
+          outboundFlight: {
+            flightNumber: outboundFlightData.flightNumber,
+            departure: outboundFlightData.departure,
+            arrival: outboundFlightData.arrival,
+            fareClass: outboundFareClass,
+            price: outboundPrice
+          },
+          inboundFlight: {
+            flightNumber: inboundFlightData.flightNumber,
+            departure: inboundFlightData.departure,
+            arrival: inboundFlightData.arrival,
+            fareClass: inboundFareClass,
+            price: inboundPrice
+          },
+          pricing: {
+            subtotal: price.subtotal,
             taxes: price.taxes,
-            fees: price.resortFees,
-            pointsRedeemed: redeemPoints,
-            startDate: checkInISO,
-            endDate: checkOutISO,
-            destinationCity: s.city,
-            destinationCountry: "US"
-          }]
+            total: finalTotal
+          }
         }),
       });
       if (res.ok) {
         const json = await res.json();
         bookingId = json.bookingId || bookingId;
       }
-    } catch {
-      // ignore booking errors, still try to post journal
-    }
-
-    // 2. Post Accrual / Stay journal to Loyalty Management
-    try {
-      const payload = buildAccrualFromCheckout({
-        bookingId,
-        currency: stay?.currency ?? "USD",
-        total: adjustedTotal, // Use final total after point redemption
-        taxes: price.taxes,
-        nights,
-        checkInISO,
-        checkOutISO,
-        city: s.city,
-        posa: "US",                 // hardcoded example, replace if dynamic
-        memberId: undefined,        // supply Program Member Id if you have it
-        channel: "Web",
-        paymentMethod: "Delta Card",
-        paymentType: "Cash",
-        destinationCountry: "US",   // set if you know
-        bookingDate: new Date().toISOString().slice(0, 10),
-      });
-
-      await postStayAccrual(payload);
-      console.log("Accrual journal posted:", payload);
     } catch (err) {
-      console.warn("Accrual journal failed:", err);
-      // non-blocking: user still proceeds to confirmation
+      console.warn("Flight booking API failed:", err);
+      // Still proceed to confirmation for demo purposes
     }
 
-    // 3. Post Redemption journal if points are being redeemed
-    if (redeemPoints > 0) {
-      try {
-        const redemptionPayload = buildRedemptionFromCheckout({
-          bookingId: `${bookingId}-REDEEM`,
-          points: redeemPoints,
-          nights,
-          checkInISO,
-          checkOutISO,
-          city: s.city,
-          posa: "US",
-          memberId: undefined,        // supply Program Member Id if you have it
-          destinationCountry: "US",
-          bookingDate: new Date().toISOString().slice(0, 10),
-          comment: `Point redemption for booking ${bookingId}: ${redeemPoints} points = ${formatPointsAsCurrency(redeemPoints)}`,
-        });
+    // 2. Navigate to confirmation page
+    const confirmationParams = new URLSearchParams({
+      booking: bookingId,
+      outboundFlight,
+      outboundFareClass,
+      outboundPrice: outboundPrice.toString(),
+      inboundFlight,
+      inboundFareClass,
+      inboundPrice: inboundPrice.toString(),
+      passengers,
+      total: finalTotal.toString()
+    });
 
-        await postStayRedemption(redemptionPayload);
-        console.log("Redemption journal posted:", redemptionPayload);
-      } catch (err) {
-        console.warn("Redemption journal failed:", err);
-        // non-blocking: user still proceeds to confirmation
-      }
-    }
-
-    // 3. Navigate to confirmation page
-    navigate(
-      `/confirmation?booking=${encodeURIComponent(
-        bookingId
-      )}&stay=${encodeURIComponent(s.id)}&room=${encodeURIComponent(
-        r.code
-      )}&guests=${encodeURIComponent(guests)}&nights=${encodeURIComponent(
-        String(nights)
-      )}&checkIn=${encodeURIComponent(
-        checkInISO
-      )}&checkOut=${encodeURIComponent(checkOutISO)}`
-    );
+    navigate(`/confirmation?${confirmationParams.toString()}`);
   }
 
   return (
@@ -417,240 +239,177 @@ export default function Checkout() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
-        {/* Order summary */}
+        {/* Flight booking summary */}
         <aside className="md:col-span-1">
-          {/* Promotions Display */}
-          {promotions.hasPromotions && promotions.calculation && (
-            <div className="mb-4">
-              <PromotionDisplay
-                promotions={promotions.promotions}
-                appliedPromotions={promotions.calculation.appliedPromotions}
-                originalAmount={price.total}
-                finalAmount={priceAfterPromotions}
-                totalDiscount={promotionDiscount}
-                loading={promotions.loading}
-              />
-            </div>
-          )}
+          <div className="rounded-2xl bg-white p-5 shadow">
+            <div className="font-semibold text-gray-900 mb-4">Flight Summary</div>
 
-        <div className="rounded-2xl bg-white p-5 shadow">
-          <div className="text-sm text-gray-600">{s.city}</div>
-          <div className="font-semibold text-gray-900">{s.name}</div>
-
-          <div className="mt-2 text-sm text-gray-700">
-            <div className="font-medium">Room</div>
-            <div>{r.name}</div>
-          </div>
-
-          <div className="mt-4 text-sm text-gray-700 space-y-1">
-            <div className="flex justify-between">
-              <span>
-                {fmt(price.nightly)} × {nights} night{nights > 1 ? "s" : ""}
-              </span>
-              <span>{fmt(price.subtotalNights)}</span>
-            </div>
-
-            {price.resortFeePerNight > 0 && (
-              <div className="flex justify-between">
-                <span>
-                  Resort fee {fmt(price.resortFeePerNight)} × {nights}
-                </span>
-                <span>{fmt(price.resortFees)}</span>
+            {/* Outbound Flight */}
+            <div className="mb-4 pb-4 border-b border-gray-200">
+              <div className="text-sm font-medium text-gray-900 mb-2">Outbound</div>
+              <div className="text-sm text-gray-700">
+                <div className="flex justify-between items-center">
+                  <span>{outboundFlightData.flightNumber}</span>
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{fareClassLabels[outboundFareClass as FareClass]}</span>
+                </div>
+                <div className="mt-1 text-xs text-gray-600">
+                  {outboundFlightData.departure.time} {outboundFlightData.departure.code} → {outboundFlightData.arrival.time} {outboundFlightData.arrival.code}
+                </div>
+                <div className="mt-1 text-xs text-gray-500">{outboundFlightData.duration} • Nonstop</div>
               </div>
-            )}
+            </div>
 
-            {price.taxesPct > 0 && (
+            {/* Inbound Flight */}
+            <div className="mb-4 pb-4 border-b border-gray-200">
+              <div className="text-sm font-medium text-gray-900 mb-2">Inbound</div>
+              <div className="text-sm text-gray-700">
+                <div className="flex justify-between items-center">
+                  <span>{inboundFlightData.flightNumber}</span>
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{fareClassLabels[inboundFareClass as FareClass]}</span>
+                </div>
+                <div className="mt-1 text-xs text-gray-600">
+                  {inboundFlightData.departure.time} {inboundFlightData.departure.code} → {inboundFlightData.arrival.time} {inboundFlightData.arrival.code}
+                </div>
+                <div className="mt-1 text-xs text-gray-500">{inboundFlightData.duration} • Nonstop</div>
+              </div>
+            </div>
+
+            {/* Pricing Breakdown */}
+            <div className="mt-4 text-sm text-gray-700 space-y-1">
               <div className="flex justify-between">
-                <span>Taxes ({(price.taxesPct * 100).toFixed(1)}%)</span>
+                <span>Outbound flight</span>
+                <span>{fmt(price.outboundPrice)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Inbound flight</span>
+                <span>{fmt(price.inboundPrice)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+                <span>{fmt(price.subtotal)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Taxes & Fees ({(price.taxesPct * 100).toFixed(1)}%)</span>
                 <span>{fmt(price.taxes)}</span>
               </div>
-            )}
-
-            {/* Promotion discount */}
-            {promotionDiscount > 0 && (
-              <div className="flex justify-between text-green-700">
-                <span>Promotion discount</span>
-                <span>-{fmt(promotionDiscount)}</span>
+              <div className="mt-2 border-t pt-2 flex justify-between font-semibold text-gray-900">
+                <span>Total</span>
+                <span>{fmt(finalTotal)}</span>
               </div>
-            )}
-
-            {/* Points credit (UI only) */}
-            {redeemPoints > 0 && (
-              <div className="flex justify-between text-emerald-700">
-                <span>Points credit ({redeemPoints.toLocaleString()} pts)</span>
-                <span>-{fmt(redeemCredit)}</span>
-              </div>
-            )}
-
-            <div className="mt-2 border-t pt-2 flex justify-between font-semibold text-gray-900">
-              <span>{redeemPoints > 0 ? "Pay today" : "Total"}</span>
-              <span>{fmt(redeemPoints > 0 ? adjustedTotal : priceAfterPromotions)}</span>
             </div>
 
-            {redeemPoints > 0 && (
-              <div className="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded">
-                {redeemPoints.toLocaleString()} points = {fmt(redeemCredit)} credit applied
-              </div>
-            )}
+            <div className="mt-3 text-xs text-gray-500">
+              Passengers: {passengers}
+            </div>
           </div>
+        </aside>
 
-          <div className="mt-3 text-xs text-gray-500">
-            Guests: {guests} • Nights: {nights}
-          </div>
-
-          <div className="mt-3">
-            <div className="text-xs text-gray-500 mb-1">Estimated Points</div>
-            <EstimatedPoints
-              byCurrency={estimate}
-              preferred={["Miles", "MQDs", "PTS"]}
-              loading={simLoading && !estimate}
-            />
-            {simError && (
-              <div className="mt-2 text-xs text-yellow-800 bg-yellow-50 inline-block px-2 py-1 rounded">
-                Points estimate unavailable right now.
-              </div>
-            )}
-          </div>
-        </div>
-      </aside>
-
-      {/* Guest & payment form */}
+      {/* Passenger & payment form */}
       <section className="md:col-span-2 rounded-2xl bg-white p-5 shadow">
         <div className="mb-4 text-lg font-semibold text-gray-900">
-          Guest details
+          Passenger Details
         </div>
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm text-gray-700">First name</label>
+              <label className="block text-sm text-gray-700">First name *</label>
               <input
                 name="firstName"
+                required
                 className="mt-1 w-full rounded-md border px-3 py-2"
+                placeholder="Enter first name"
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-700">Last name</label>
+              <label className="block text-sm text-gray-700">Last name *</label>
               <input
                 name="lastName"
+                required
                 className="mt-1 w-full rounded-md border px-3 py-2"
+                placeholder="Enter last name"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm text-gray-700">Email</label>
+            <label className="block text-sm text-gray-700">Email *</label>
             <input
               name="email"
+              type="email"
+              required
               className="mt-1 w-full rounded-md border px-3 py-2"
+              placeholder="Enter email address"
             />
           </div>
 
-          {/* Redemption UI (elegant placement before Payment) */}
-          <div className="pt-2">
-            <div className="mb-2 text-lg font-semibold text-gray-900">
-              Apply points (optional)
-            </div>
-            <div className="rounded-xl border p-4 shadow-sm bg-white">
-              <RedemptionForm
-                bookingId={`preview-${Date.now()}`}
-                maxPoints={50000} // Demo: could fetch actual balance from member API
-                onPreview={(pts) => {
-                  setRedeemPoints(Math.max(0, Math.floor(pts)));
-                  setRedemptionError(null);
-                }}
-                onSubmit={(pts) => {
-                  const validPoints = Math.max(0, Math.floor(pts));
-                  setRedeemPoints(validPoints);
-                  setRedemptionError(null);
-                  console.log(`Points applied: ${validPoints} = ${formatPointsAsCurrency(validPoints)}`);
-                }}
-              />
-              
-              {/* Redemption preview */}
-              {redeemPoints > 0 && (
-                <div className="mt-3 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                  <div className="text-sm text-emerald-800">
-                    <div className="font-medium">Point Redemption Applied</div>
-                    <div className="mt-1">
-                      <strong>{redeemPoints.toLocaleString()} points</strong> = <strong>{formatPointsAsCurrency(redeemPoints)}</strong> credit
-                    </div>
-                    <div className="text-xs mt-2 text-emerald-600">
-                      This redemption will be processed when you complete your booking.
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Redemption error */}
-              {redemptionError && (
-                <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                  <div className="text-sm text-red-800">
-                    <div className="font-medium">Redemption Error</div>
-                    <div className="mt-1">{redemptionError}</div>
-                  </div>
-                </div>
-              )}
-            </div>
+          <div>
+            <label className="block text-sm text-gray-700">Phone number</label>
+            <input
+              name="phone"
+              type="tel"
+              className="mt-1 w-full rounded-md border px-3 py-2"
+              placeholder="Enter phone number"
+            />
           </div>
 
-          <div className="mt-4 text-lg font-semibold text-gray-900">Payment</div>
+          <div className="mt-6 text-lg font-semibold text-gray-900">Payment</div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm text-gray-700">Card number</label>
+              <label className="block text-sm text-gray-700">Card number *</label>
               <input
                 name="cardNumber"
+                required
                 className="mt-1 w-full rounded-md border px-3 py-2"
+                placeholder="1234 5678 9012 3456"
               />
             </div>
             <div>
               <label className="block text-sm text-gray-700">
-                Expiry (MM/YY)
+                Expiry (MM/YY) *
               </label>
               <input
                 name="expiry"
+                required
                 className="mt-1 w-full rounded-md border px-3 py-2"
+                placeholder="MM/YY"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm text-gray-700">CVC</label>
+              <label className="block text-sm text-gray-700">CVC *</label>
               <input
                 name="cvc"
+                required
                 className="mt-1 w-full rounded-md border px-3 py-2"
+                placeholder="123"
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-700">Postal code</label>
+              <label className="block text-sm text-gray-700">Postal code *</label>
               <input
                 name="postal"
+                required
                 className="mt-1 w-full rounded-md border px-3 py-2"
+                placeholder="12345"
               />
             </div>
           </div>
 
           <button
             type="submit"
-            className="mt-2 rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-700"
+            className="mt-6 w-full rounded-lg bg-red-600 px-4 py-3 font-semibold text-white hover:bg-red-700 transition-colors"
           >
-            Confirm and pay {redeemPoints > 0 ? `• ${fmt(adjustedTotal)}` : ""}
+            Complete Booking • {fmt(finalTotal)}
           </button>
 
-          <div className="mt-3">
+          <div className="mt-3 text-center">
             <Link
-              to={`/stay/${encodeURIComponent(
-                s.id
-              )}?guests=${encodeURIComponent(
-                guests
-              )}&nights=${encodeURIComponent(
-                String(nights)
-              )}&checkIn=${encodeURIComponent(
-                checkInISO
-              )}&checkOut=${encodeURIComponent(checkOutISO)}`}
-              className="text-indigo-600 hover:underline"
+              to="/return-flights"
+              className="text-indigo-600 hover:underline text-sm"
             >
-              ← Back to property
+              ← Back to flight selection
             </Link>
           </div>
         </form>

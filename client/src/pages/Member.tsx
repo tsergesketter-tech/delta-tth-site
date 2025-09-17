@@ -3,6 +3,7 @@ import React from "react";
 
 // Existing components
 import MemberProfile from "../components/MemberProfile";
+import { DEMO_MEMBER } from "../constants/loyalty";
 import TransactionHistory from "../components/profile/TransactionHistory"; // keep if you already have this
 
 // New components (from my previous message)
@@ -44,8 +45,8 @@ export default function MemberPage() {
       <section aria-labelledby="member-profile">
         <h2 id="member-profile" className="sr-only">Member Profile</h2>
         <MemberProfile
-          membershipNumber="DL12345"
-          loyaltyProgramName="Cars and Stays by Delta"
+          membershipNumber={DEMO_MEMBER.MEMBERSHIP_NUMBER}
+          loyaltyProgramName={DEMO_MEMBER.PROGRAM_NAME}
         />
       </section>
 

@@ -3,7 +3,7 @@ import React from 'react';
 import type { MemberProfile } from '../types/member';
 
 type Props = {
-  profile: MemberProfile;
+  profile: MemberProfile | null;
   loading?: boolean;
   error?: string | null;
   onViewOffers?: () => void;
@@ -55,6 +55,14 @@ export default function MemberProfileCard({
     );
   }
 
+  if (!profile) {
+    return (
+      <div style={styles.card}>
+        <div style={{ color: '#64748b', fontWeight: 600 }}>No profile data</div>
+      </div>
+    );
+  }
+
   const {
     firstName,
     lastName,
@@ -65,7 +73,7 @@ export default function MemberProfileCard({
     vouchersCount,
     offersCount,
     avatarUrl,
-  } = profile;
+  } = profile!;
 
   // New: tolerant reads for miles/MQDs (works even if your MemberProfile type
   // doesn’t have them yet; you can add them later without changing this file)

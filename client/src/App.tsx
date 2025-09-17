@@ -17,6 +17,7 @@ import Promotions from "./pages/Promotions";
 import MemberPage from "./pages/Member";
 import CreditCards from "./pages/CreditCardNew";
 import SearchResults from "./pages/SearchResults";
+import ReturnFlights from "./pages/ReturnFlights";
 import Checkout from "./pages/Checkout";
 import Confirmation from "./pages/Confirmation";
 import StayDetail from "./pages/StayDetail";
@@ -82,6 +83,7 @@ export default function App() {
         <Route path="/promotions" element={<Promotions />} />
         <Route path="/credit-cards" element={<CreditCards />} />
         <Route path="/search" element={<SearchResults />} />
+        <Route path="/return-flights" element={<ReturnFlights />} />
         <Route path="/stay/:id" element={<StayDetail />} />
         <Route path="/login" element={<LoginPage />} />
 

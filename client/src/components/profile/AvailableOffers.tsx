@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { MOCK_PROMOTIONS } from "../../data/mockPromotions";
+import { DEMO_MEMBER } from "../../constants/loyalty";
 
 
 // ---------- Types ----------
@@ -26,7 +27,7 @@ type Filters = {
   sort: "relevance" | "endSoon" | "startSoon" | "earnHigh";
 };
 
-const PROGRAM_NAME = "Cars and Stays by Delta";
+const PROGRAM_NAME = DEMO_MEMBER.PROGRAM_NAME;
 
 // Placeholder facets you can later populate from SF data
 const OFFER_TYPES = [
@@ -91,7 +92,7 @@ function bucketizeEarn(n: number | null): (typeof EARN_BUCKETS)[number] | null {
 
 // ---------- UI ----------
 export default function AvailableOffers() {
-  const [memberId, setMemberId] = useState("DL12345");
+  const [memberId, setMemberId] = useState<string>(DEMO_MEMBER.MEMBERSHIP_NUMBER);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [promos, setPromos] = useState<Promotion[]>([]);

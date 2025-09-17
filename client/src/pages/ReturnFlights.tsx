@@ -1,4 +1,4 @@
-// src/pages/SearchResults.tsx
+// src/pages/ReturnFlights.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 
@@ -30,53 +30,53 @@ type Flight = {
 
 type FareClass = 'main' | 'comfort' | 'business' | 'first';
 
-const sampleFlights: Flight[] = [
+const sampleReturnFlights: Flight[] = [
   {
-    id: "DL3134",
+    id: "DL2891",
     airline: "Delta",
-    flightNumber: "DL3134",
-    departure: { time: "4:40pm", airport: "Indianapolis", code: "IND" },
-    arrival: { time: "6:25pm", airport: "Atlanta", code: "ATL" },
-    duration: "1h 45m",
+    flightNumber: "DL2891",
+    departure: { time: "7:45am", airport: "Atlanta", code: "ATL" },
+    arrival: { time: "9:35am", airport: "Indianapolis", code: "IND" },
+    duration: "1h 50m",
     aircraft: "Airbus A320",
     stops: 0,
-    prices: { main: 545, comfort: 745, business: 1245, first: 1845 },
+    prices: { main: 565, comfort: 765, business: 1265, first: 1865 },
     amenities: ["Free Wi-Fi for SkyMiles Members", "Live TV", "Power Outlets"]
   },
   {
-    id: "DL1892",
+    id: "DL1567",
     airline: "Delta",
-    flightNumber: "DL1892",
-    departure: { time: "7:15am", airport: "Indianapolis", code: "IND" },
-    arrival: { time: "9:05am", airport: "Atlanta", code: "ATL" },
-    duration: "1h 50m",
+    flightNumber: "DL1567",
+    departure: { time: "11:20am", airport: "Atlanta", code: "ATL" },
+    arrival: { time: "1:15pm", airport: "Indianapolis", code: "IND" },
+    duration: "1h 55m",
     aircraft: "Boeing 737-800",
     stops: 0,
-    prices: { main: 485, comfort: 685, business: 1185, first: 1785 },
+    prices: { main: 525, comfort: 725, business: 1225, first: 1825 },
     amenities: ["Free Wi-Fi for SkyMiles Members", "Complimentary Snacks", "Power Outlets"]
   },
   {
-    id: "DL2456",
+    id: "DL3342",
     airline: "Delta",
-    flightNumber: "DL2456",
-    departure: { time: "11:30am", airport: "Indianapolis", code: "IND" },
-    arrival: { time: "1:20pm", airport: "Atlanta", code: "ATL" },
-    duration: "1h 50m",
+    flightNumber: "DL3342",
+    departure: { time: "3:15pm", airport: "Atlanta", code: "ATL" },
+    arrival: { time: "5:10pm", airport: "Indianapolis", code: "IND" },
+    duration: "1h 55m",
     aircraft: "Boeing 737-900",
     stops: 0,
-    prices: { main: 625, comfort: 825, business: 1325, first: 1925 },
+    prices: { main: 645, comfort: 845, business: 1345, first: 1945 },
     amenities: ["Free Wi-Fi for SkyMiles Members", "Live TV", "Premium Snacks"]
   },
   {
-    id: "DL4521",
+    id: "DL4789",
     airline: "Delta",
-    flightNumber: "DL4521",
-    departure: { time: "2:45pm", airport: "Indianapolis", code: "IND" },
-    arrival: { time: "4:35pm", airport: "Atlanta", code: "ATL" },
-    duration: "1h 50m",
+    flightNumber: "DL4789",
+    departure: { time: "6:30pm", airport: "Atlanta", code: "ATL" },
+    arrival: { time: "8:25pm", airport: "Indianapolis", code: "IND" },
+    duration: "1h 55m",
     aircraft: "Airbus A321",
     stops: 0,
-    prices: { main: 585, comfort: 785, business: 1285, first: 1885 },
+    prices: { main: 605, comfort: 805, business: 1305, first: 1905 },
     amenities: ["Free Wi-Fi for SkyMiles Members", "Live TV", "Power Outlets", "Extra Legroom Available"]
   }
 ];
@@ -88,34 +88,38 @@ const fareClassLabels = {
   first: 'First'
 };
 
-export default function SearchResults() {
+export default function ReturnFlights() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const [selectedFareClass, setSelectedFareClass] = useState<FareClass>('main');
-  const [flights] = useState<Flight[]>(sampleFlights);
+  const [flights] = useState<Flight[]>(sampleReturnFlights);
 
-  const handleFlightSelection = (flight: Flight, fareClass: FareClass) => {
-    // Navigate to return flight selection with outbound flight data
+  const from = useMemo(() => params.get("from") || "ATL", [params]);
+  const to = useMemo(() => params.get("to") || "IND", [params]);
+  const departure = useMemo(() => params.get("departure") || "Sep 25, 2025", [params]);
+  const returnDate = useMemo(() => params.get("return") || "Sep 16, 2025", [params]);
+  const passengers = useMemo(() => params.get("passengers") || "1", [params]);
+
+  // Outbound flight details
+  const outboundFlight = useMemo(() => params.get("outboundFlight") || "", [params]);
+  const outboundFareClass = useMemo(() => params.get("outboundFareClass") || "main", [params]);
+  const outboundPrice = useMemo(() => params.get("outboundPrice") || "0", [params]);
+
+  const handleReturnFlightSelection = (flight: Flight, fareClass: FareClass) => {
+    // Navigate to checkout with both flight selections
     const searchParamsObj = {
-      from: to, // Return trip is reversed
-      to: from,
-      departure: returnDate,
-      return: departure,
+      outboundFlight,
+      outboundFareClass,
+      outboundPrice,
+      inboundFlight: flight.id,
+      inboundFareClass: fareClass,
+      inboundPrice: flight.prices[fareClass].toString(),
       passengers,
-      outboundFlight: flight.id,
-      outboundFareClass: fareClass,
-      outboundPrice: flight.prices[fareClass].toString()
+      totalPrice: (parseInt(outboundPrice) + flight.prices[fareClass]).toString()
     };
 
     const queryString = new URLSearchParams(searchParamsObj).toString();
-    navigate(`/return-flights?${queryString}`);
+    navigate(`/checkout?${queryString}`);
   };
-
-  const from = useMemo(() => params.get("from") || "IND", [params]);
-  const to = useMemo(() => params.get("to") || "ATL", [params]);
-  const departure = useMemo(() => params.get("departure") || "Sep 16, 2025", [params]);
-  const returnDate = useMemo(() => params.get("return") || "Sep 25, 2025", [params]);
-  const passengers = useMemo(() => params.get("passengers") || "1", [params]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -123,7 +127,7 @@ export default function SearchResults() {
       <div className="bg-slate-900 text-white px-6 py-4">
         <div className="fresh-air-container flex items-center justify-between">
           <div className="flex items-center gap-6 text-sm">
-            <span className="font-bold">{from} - {to}</span>
+            <span className="font-bold">{to} - {from}</span>
             <span>Round Trip</span>
             <span>{departure}</span>
             <span>{passengers} Passenger{passengers !== '1' ? 's' : ''}</span>
@@ -139,9 +143,9 @@ export default function SearchResults() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Outbound</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Inbound</h1>
               <p className="text-lg text-gray-700">{from} • {to}</p>
-              <p className="text-sm text-gray-600">Tue, Sep 16, 2025</p>
+              <p className="text-sm text-gray-600">Thu, Sep 25, 2025</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
@@ -161,72 +165,19 @@ export default function SearchResults() {
             </div>
           </div>
 
-          {/* Promotional banner */}
-          <div className="bg-gradient-to-r from-teal-700 to-teal-900 rounded-lg p-6 mb-6 text-white">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <h2 className="text-xl font-bold mb-2">LIMITED TIME OFFER</h2>
-                <p className="text-sm mb-1">
-                  Earn a welcome offer starting at $300 statement credit plus 50,000 bonus Miles® with a Delta SkyMiles® American Express Card.
-                </p>
-                <p className="text-xs opacity-90">
-                  *Minimum purchase required. Offer ends October 29, 2025. Eligibility and terms apply.
-                </p>
-              </div>
-              <div className="ml-6">
-                <div className="bg-yellow-400 text-black px-4 py-2 rounded font-bold text-sm">
-                  IF YOU TRAVEL YOU KNOW
-                </div>
-              </div>
+          {/* Selected outbound flight summary */}
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-2 mb-2">
+              <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <span className="text-green-800 font-bold">Outbound Flight Selected</span>
+            </div>
+            <div className="text-sm text-green-700">
+              {outboundFlight} • {fareClassLabels[outboundFareClass as FareClass]} • ${outboundPrice}
             </div>
           </div>
 
-        </div>
-
-        {/* Explore Our Products Section */}
-        <div className="bg-gray-50 py-6 mb-6 relative">
-          <div className="fresh-air-container">
-            <div className="flex">
-              {/* Left side - Disclaimer text */}
-              <div className="w-[440px] mr-4">
-                <h3 className="text-blue-600 font-bold text-lg mb-2">Explore Our Products</h3>
-                <p className="text-gray-700 text-sm leading-relaxed">
-                  Fares are round-trip per passenger, including taxes and fees. Additional{" "}
-                  <a href="#" className="text-blue-600 underline">baggage</a>{" "}
-                  fees may apply. Delta flights may be listed first. Services and amenities may{" "}
-                  <a href="#" className="text-blue-600 underline">vary or change</a>.
-                </p>
-              </div>
-
-              {/* Right side - Fare class icons aligned with price cards below */}
-              <div className="flex-1 flex">
-                <div className="flex-1 text-center mr-2">
-                  <span className="text-blue-600 font-bold text-sm mb-2 block">Main</span>
-                  <img
-                    src="/images/main.png"
-                    alt="Delta Main seat"
-                    className="w-10 h-10 mx-auto"
-                  />
-                </div>
-                <div className="flex-1 text-center mr-2">
-                  <span className="text-blue-600 font-bold text-sm mb-2 block">Comfort+</span>
-                  <img
-                    src="/images/comfort.png"
-                    alt="Delta Comfort+ seat"
-                    className="w-10 h-10 mx-auto"
-                  />
-                </div>
-                <div className="flex-1 text-center">
-                  <span className="text-blue-600 font-bold text-sm mb-2 block">First</span>
-                  <img
-                    src="/images/first.png"
-                    alt="Delta First Class seat"
-                    className="w-10 h-10 mx-auto"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Flight results */}
@@ -240,7 +191,7 @@ export default function SearchResults() {
                   <div className="p-4">
                     {/* Badges at top of box */}
                     <div className="flex items-center gap-1 mb-6 flex-nowrap">
-                      <span className="px-3 py-1 text-white font-bold rounded-sm whitespace-nowrap" style={{backgroundColor: 'rgb(189, 89, 30)', fontSize: '12px', lineHeight: '16px'}}>Lowest Fare</span>
+                      <span className="px-3 py-1 text-white font-bold rounded-sm whitespace-nowrap" style={{backgroundColor: 'rgb(189, 89, 30)', fontSize: '12px', lineHeight: '16px'}}>Best Value</span>
                       <span className="px-3 py-1 text-white font-bold rounded-sm whitespace-nowrap" style={{backgroundColor: 'rgb(74, 120, 74)', fontSize: '12px', lineHeight: '16px'}}>Nonstop</span>
                       <span className="px-3 py-1 text-white font-bold rounded-sm whitespace-nowrap" style={{backgroundColor: 'rgb(51, 121, 142)', fontSize: '12px', lineHeight: '16px'}}>Free Wi-Fi for SkyMiles Members</span>
                     </div>
@@ -307,7 +258,7 @@ export default function SearchResults() {
                 <div className="flex-1 flex" style={{minHeight: '280px'}}>
                   {/* Main Price Card */}
                   <button
-                    onClick={() => handleFlightSelection(flight, 'main')}
+                    onClick={() => handleReturnFlightSelection(flight, 'main')}
                     className="flex-1 bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all cursor-pointer mr-2 flex flex-col group"
                     style={{
                       background: 'white'
@@ -337,7 +288,7 @@ export default function SearchResults() {
 
                   {/* Comfort+ Price Card */}
                   <button
-                    onClick={() => handleFlightSelection(flight, 'comfort')}
+                    onClick={() => handleReturnFlightSelection(flight, 'comfort')}
                     className="flex-1 bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all cursor-pointer mr-2 flex flex-col group"
                     style={{
                       background: 'white'
@@ -362,13 +313,13 @@ export default function SearchResults() {
                       <div className="text-xs mb-2 text-gray-600 group-hover:text-white transition-colors">From</div>
                       <div className="text-2xl font-bold mb-1 text-gray-900 group-hover:text-white transition-colors">${flight.prices.comfort}</div>
                       <div className="text-xs mb-1 text-gray-600 group-hover:text-white transition-colors">Round Trip</div>
-                      <div className="text-xs text-orange-600 font-bold group-hover:text-white transition-colors">5 left</div>
+                      <div className="text-xs text-orange-600 font-bold group-hover:text-white transition-colors">3 left</div>
                     </div>
                   </button>
 
                   {/* First Price Card */}
                   <button
-                    onClick={() => handleFlightSelection(flight, 'first')}
+                    onClick={() => handleReturnFlightSelection(flight, 'first')}
                     className="flex-1 bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all cursor-pointer flex flex-col group"
                     style={{
                       background: 'white'
@@ -393,7 +344,7 @@ export default function SearchResults() {
                       <div className="text-xs mb-2 text-gray-600 group-hover:text-white transition-colors">From</div>
                       <div className="text-2xl font-bold mb-1 text-gray-900 group-hover:text-white transition-colors">${flight.prices.first}</div>
                       <div className="text-xs mb-1 text-gray-600 group-hover:text-white transition-colors">Round Trip</div>
-                      <div className="text-xs text-orange-600 font-bold group-hover:text-white transition-colors">1 left</div>
+                      <div className="text-xs text-orange-600 font-bold group-hover:text-white transition-colors">2 left</div>
                     </div>
                   </button>
                 </div>
