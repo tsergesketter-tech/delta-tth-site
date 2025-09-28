@@ -76,11 +76,15 @@ export default function MemberProfileCard({
   } = profile!;
 
   // New: tolerant reads for miles/MQDs (works even if your MemberProfile type
-  // doesn’t have them yet; you can add them later without changing this file)
+  // doesn't have them yet; you can add them later without changing this file)
   const miles = (profile as any)?.miles as number | undefined;
   const mqds =
     (profile as any)?.mqds ??
     (profile as any)?.mqd as number | undefined; // accept either key
+
+  // Pending/escrow balances
+  const pendingMiles = (profile as any)?.pendingMiles as number | undefined;
+  const pendingMqds = (profile as any)?.pendingMqds as number | undefined;
 
   return (
     <div style={styles.card}>
@@ -126,10 +130,16 @@ export default function MemberProfileCard({
             <div>
               <div style={styles.kpiLabel}>Miles</div>
               <div style={styles.kpiValueSmall}>{fmtNumber(miles)}</div>
+              {typeof pendingMiles === 'number' && pendingMiles > 0 && (
+                <div style={styles.pendingText}>+{fmtNumber(pendingMiles)} pending</div>
+              )}
             </div>
             <div>
               <div style={styles.kpiLabel}>MQDs</div>
               <div style={styles.kpiValueSmall}>{fmtNumber(mqds)}</div>
+              {typeof pendingMqds === 'number' && pendingMqds > 0 && (
+                <div style={styles.pendingText}>+{fmtNumber(pendingMqds)} pending</div>
+              )}
             </div>
           </div>
         </div>
@@ -270,6 +280,16 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 12,
   },
   kpiValueSmall: { fontSize: 18, fontWeight: 800, marginTop: 2 },
+
+  // Pending points styling
+  pendingText: {
+    fontSize: 10,
+    color: '#f59e0b',
+    fontWeight: 600,
+    marginTop: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5
+  },
 
   progressHeader: {
     display: 'flex',

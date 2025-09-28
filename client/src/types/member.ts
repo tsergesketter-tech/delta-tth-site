@@ -26,6 +26,8 @@ export type MemberProfile = {
 
   miles?: number;
   mqds?: number;
+  pendingMiles?: number;
+  pendingMqds?: number;
 
   /** Redeemable balance (points/miles) */
   availablePoints?: number;

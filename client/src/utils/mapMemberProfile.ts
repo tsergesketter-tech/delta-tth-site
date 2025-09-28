@@ -26,13 +26,17 @@ export function mapSFMemberProfile(sf: any): MemberProfile {
 
   const byName: Record<string, any> = {};
   for (const c of currenciesArr) {
-    const key = c?.loyaltyMemberCurrencyName;
+    const key = c?.loyaltyMemberCurrencyName || c?.programCurrency;
     if (key) byName[key] = c;
   }
 
   // Balances
   const milesBal = byName["Miles"]?.pointsBalance;
-  const mqdsBal  = byName["MQDs"]?.pointsBalance;
+  const mqdsBal  = byName["MQDs"]?.pointsBalance || byName["NQP"]?.pointsBalance;
+
+  // Pending/Escrow balances
+  const pendingMilesBal = byName["Miles"]?.escrowPointsBalance;
+  const pendingMqdsBal = byName["MQDs"]?.escrowPointsBalance || byName["NQP"]?.escrowPointsBalance;
 
   // Keep "availablePoints" as your main headline (use Miles balance)
   const availablePoints = typeof milesBal === "number" ? milesBal : 0;
@@ -60,6 +64,8 @@ export function mapSFMemberProfile(sf: any): MemberProfile {
     lifetimePoints,
     miles: typeof milesBal === "number" ? milesBal : undefined,
     mqds: typeof mqdsBal === "number" ? mqdsBal : undefined,
+    pendingMiles: typeof pendingMilesBal === "number" ? pendingMilesBal : undefined,
+    pendingMqds: typeof pendingMqdsBal === "number" ? pendingMqdsBal : undefined,
     memberSince,
     avatarUrl,
     vouchersCount,

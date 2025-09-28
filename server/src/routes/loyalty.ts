@@ -115,7 +115,7 @@ router.get("/member/:membershipNumber/vouchers", async (req, res) => {
     }
 
     // Use the correct Salesforce Loyalty API pattern for vouchers
-    const programName = "Cars and Stays by Delta";
+    const programName = "Delta SkyMiles";
 
     // Based on Salesforce Loyalty API documentation and user feedback
     const endpointAttempts = [
@@ -274,7 +274,7 @@ function sessionMembership(req: import('express').Request) {
   return {
     membershipNumber: m?.membershipNumber ?? null,
     memberId: m?.memberId ?? null,
-    program: m?.program ?? 'Cars and Stays by Delta'
+    program: m?.program ?? 'Delta SkyMiles'
   };
 }
 
@@ -642,7 +642,7 @@ async function fetchMemberRecord(program: string, input: string) {
 router.get("/members", async (req, res) => {
   try {
     const program =
-      (req.query.program as string) || "Cars and Stays by Delta";
+      (req.query.program as string) || "Delta SkyMiles";
     const input =
       (req.query.membershipNumber as string) ||
       (req.query.memberId as string);
@@ -669,7 +669,7 @@ router.get("/member/:membershipNumber", async (req, res) => {
   try {
     const { membershipNumber } = req.params;
     const program =
-      (req.query.program as string) || "Cars and Stays by Delta";
+      (req.query.program as string) || "Delta SkyMiles";
 
     const member = await fetchMemberRecord(program, membershipNumber);
     if (!member || typeof member !== "object") {
@@ -873,7 +873,7 @@ router.post('/promotions', async (req, res) => {
     const {
       memberId,                // optional: a Salesforce 15/18 char Id
       membershipNumber,        // optional: e.g., "DL12345"
-      program = 'Cars and Stays by Delta',
+      program = 'Delta SkyMiles',
       processName = 'Get Member Promotions',
     } = req.body ?? {};
 
@@ -936,7 +936,7 @@ router.post('/promotions', async (req, res) => {
 router.post('/simulate', async (req, res) => {
   try {
     const {
-      program = 'Cars and Stays by Delta',
+      program = 'Delta SkyMiles',
       membershipNumber,
       journals = [],
       transactionJournals = [],
@@ -1016,7 +1016,7 @@ router.get('/member/:membershipNumber/enrolled-promotions', async (req, res) => 
     const { membershipNumber } = req.params;
     console.log(`📋 Fetching enrolled promotions for member: ${membershipNumber}`);
 
-    const program = 'Cars and Stays by Delta';
+    const program = 'Delta SkyMiles';
     const processName = 'Get Member Promotions';
 
     // Use the same process endpoint as the offers component
@@ -1087,7 +1087,7 @@ router.get('/member/:membershipNumber/engagement-trail/:promotionId', async (req
     const { membershipNumber, promotionId } = req.params;
     console.log(`🛤️ Fetching engagement trail progress for member: ${membershipNumber}, promotion: ${promotionId}`);
 
-    const programName = "Cars and Stays by Delta";
+    const programName = "Delta SkyMiles";
 
     // Call Salesforce Connect API for Member Engagement Trail
     // Based on: https://developer.salesforce.com/docs/atlas.en-us.loyalty.meta/loyalty/connect_resources_member_engagement_trail.htm
