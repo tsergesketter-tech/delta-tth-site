@@ -1,11 +1,6 @@
 // src/pages/Checkout.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  Link,
-  useNavigate,
-  useSearchParams,
-  useLocation,
-} from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { DEMO_MEMBER } from "../constants/loyalty";
 
@@ -307,104 +302,44 @@ export default function Checkout() {
       {/* Passenger & payment form */}
       <section className="md:col-span-2 rounded-2xl bg-white p-5 shadow">
         <div className="mb-4 text-lg font-semibold text-gray-900">
-          Passenger Details
+          Review & Confirm Booking
         </div>
-        <form onSubmit={handleSubmit} noValidate className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm text-gray-700">First name *</label>
-              <input
-                name="firstName"
-                required
-                className="mt-1 w-full rounded-md border px-3 py-2"
-                placeholder="Enter first name"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-700">Last name *</label>
-              <input
-                name="lastName"
-                required
-                className="mt-1 w-full rounded-md border px-3 py-2"
-                placeholder="Enter last name"
-              />
-            </div>
+        <form onSubmit={handleSubmit} noValidate className="space-y-5">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <h3 className="text-sm font-semibold text-slate-800">Member on File</h3>
+            <p className="mt-2 text-sm text-slate-600">
+              This demo uses a pre-configured SkyMiles member for all checkouts. No personal
+              information is collected or stored.
+            </p>
+            <dl className="mt-3 grid grid-cols-2 gap-y-1 text-sm text-slate-700">
+              <dt className="font-medium">Program</dt>
+              <dd>{DEMO_MEMBER.PROGRAM_NAME}</dd>
+              <dt className="font-medium">Membership #</dt>
+              <dd>{DEMO_MEMBER.MEMBERSHIP_NUMBER}</dd>
+            </dl>
           </div>
 
-          <div>
-            <label className="block text-sm text-gray-700">Email *</label>
-            <input
-              name="email"
-              type="email"
-              required
-              className="mt-1 w-full rounded-md border px-3 py-2"
-              placeholder="Enter email address"
-            />
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <h3 className="text-sm font-semibold text-slate-800">Payment Handling</h3>
+            <p className="mt-2 text-sm text-slate-600">
+              Real credit card entry is intentionally disabled in this environment. The booking
+              confirmation flow simulates payment approval using sample data only.
+            </p>
           </div>
 
-          <div>
-            <label className="block text-sm text-gray-700">Phone number</label>
-            <input
-              name="phone"
-              type="tel"
-              className="mt-1 w-full rounded-md border px-3 py-2"
-              placeholder="Enter phone number"
-            />
-          </div>
-
-          <div className="mt-6 text-lg font-semibold text-gray-900">Payment</div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm text-gray-700">Card number *</label>
-              <input
-                name="cardNumber"
-                required
-                className="mt-1 w-full rounded-md border px-3 py-2"
-                placeholder="1234 5678 9012 3456"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-700">
-                Expiry (MM/YY) *
-              </label>
-              <input
-                name="expiry"
-                required
-                className="mt-1 w-full rounded-md border px-3 py-2"
-                placeholder="MM/YY"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm text-gray-700">CVC *</label>
-              <input
-                name="cvc"
-                required
-                className="mt-1 w-full rounded-md border px-3 py-2"
-                placeholder="123"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-700">Postal code *</label>
-              <input
-                name="postal"
-                required
-                className="mt-1 w-full rounded-md border px-3 py-2"
-                placeholder="12345"
-              />
-            </div>
-          </div>
+          <p className="text-xs text-slate-500">
+            By continuing you acknowledge that this is a demonstration experience and no real
+            travel will be booked.
+          </p>
 
           <button
             type="submit"
-            className="mt-6 w-full rounded-lg bg-red-600 px-4 py-3 font-semibold text-white hover:bg-red-700 transition-colors"
+            className="w-full rounded-lg bg-red-600 px-4 py-3 font-semibold text-white hover:bg-red-700 transition-colors"
           >
             Complete Booking • {fmt(finalTotal)}
           </button>
 
-          <div className="mt-3 text-center">
+          <div className="text-center">
             <Link
               to="/return-flights"
               className="text-indigo-600 hover:underline text-sm"
@@ -418,4 +353,3 @@ export default function Checkout() {
     </div>
   );
 }
-
