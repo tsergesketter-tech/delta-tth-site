@@ -24,14 +24,14 @@ function MessageBubble({ message }: { message: AgentforceDisplayMessage }) {
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
-              ul: ({ node, ...props }) => (
+              ul: (props) => (
                 <ul className="list-disc pl-5 space-y-1" {...props} />
               ),
-              ol: ({ node, ...props }) => (
+              ol: (props) => (
                 <ol className="list-decimal pl-5 space-y-1" {...props} />
               ),
-              li: ({ node, ...props }) => <li className="text-left" {...props} />,
-              a: ({ node, ...props }) => (
+              li: (props) => <li className="text-left" {...props} />,
+              a: (props) => (
                 <a
                   className="underline decoration-red-500 decoration-2 underline-offset-2 hover:text-red-600"
                   target="_blank"
@@ -39,8 +39,8 @@ function MessageBubble({ message }: { message: AgentforceDisplayMessage }) {
                   {...props}
                 />
               ),
-              img: ({ node, ...props }) => <MarkdownImage {...props} />,
-              p: ({ node, ...props }) => (
+              img: (props) => <MarkdownImage {...props} />,
+              p: (props) => (
                 <p className="mb-3 last:mb-0 text-left" {...props} />
               ),
             }}
@@ -60,10 +60,8 @@ function MessageBubble({ message }: { message: AgentforceDisplayMessage }) {
   );
 }
 
-function MarkdownImage(
-  props: React.ImgHTMLAttributes<HTMLImageElement> & { node?: unknown }
-) {
-  const { alt, src, node: _node, ...rest } = props;
+function MarkdownImage(props: React.ImgHTMLAttributes<HTMLImageElement>) {
+  const { alt, src, ...rest } = props;
   const [failed, setFailed] = useState(false);
 
   if (!src || failed) {
