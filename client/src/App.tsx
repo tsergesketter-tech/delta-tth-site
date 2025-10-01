@@ -8,22 +8,36 @@ import {
   useNavigate,
   Link,
 } from "react-router-dom";
-import React, { ReactNode } from "react";
+import React, { ReactNode, lazy, Suspense } from "react";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import "./styles/evergage.css";
-import Home from "./pages/Home";
-import Promotions from "./pages/Promotions";
-import MemberPage from "./pages/Member";
-import CreditCards from "./pages/CreditCardNew";
-import SearchResults from "./pages/SearchResults";
-import ReturnFlights from "./pages/ReturnFlights";
-import Checkout from "./pages/Checkout";
-import Confirmation from "./pages/Confirmation";
-import StayDetail from "./pages/StayDetail";
-import DestinationType from "./pages/DestinationType";
 import LoginCard, { useAuth } from "./components/LoginCard";
-import AgentAssist from "./pages/AgentAssist";
+
+// Lazy load pages for code splitting
+const Home = lazy(() => import("./pages/Home"));
+const Promotions = lazy(() => import("./pages/Promotions"));
+const MemberPage = lazy(() => import("./pages/Member"));
+const CreditCards = lazy(() => import("./pages/CreditCardNew"));
+const SearchResults = lazy(() => import("./pages/SearchResults"));
+const ReturnFlights = lazy(() => import("./pages/ReturnFlights"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const Confirmation = lazy(() => import("./pages/Confirmation"));
+const StayDetail = lazy(() => import("./pages/StayDetail"));
+const DestinationType = lazy(() => import("./pages/DestinationType"));
+const AgentAssist = lazy(() => import("./pages/AgentAssist"));
+
+// Loading fallback component
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900"></div>
+        <p className="mt-4 text-gray-600">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 // --- Protect routes ---
 // --- Protect routes ---
@@ -77,50 +91,52 @@ export default function App() {
   return (
     <BrowserRouter>
       <Header />
-      <Routes>
-        {/* Public */}
-        <Route path="/" element={<Home />} />
-        <Route path="/destination-type" element={<DestinationType />} />
-        <Route path="/promotions" element={<Promotions />} />
-        <Route path="/credit-cards" element={<CreditCards />} />
-        <Route path="/agent" element={<AgentAssist />} />
-        <Route path="/search" element={<SearchResults />} />
-        <Route path="/return-flights" element={<ReturnFlights />} />
-        <Route path="/stay/:id" element={<StayDetail />} />
-        <Route path="/login" element={<LoginPage />} />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Public */}
+          <Route path="/" element={<Home />} />
+          <Route path="/destination-type" element={<DestinationType />} />
+          <Route path="/promotions" element={<Promotions />} />
+          <Route path="/credit-cards" element={<CreditCards />} />
+          <Route path="/agent" element={<AgentAssist />} />
+          <Route path="/search" element={<SearchResults />} />
+          <Route path="/return-flights" element={<ReturnFlights />} />
+          <Route path="/stay/:id" element={<StayDetail />} />
+          <Route path="/login" element={<LoginPage />} />
 
-        {/* Protected */}
-        <Route
-          path="/member"
-          element={
-            <RequireAuth>
-              <MemberPage />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/checkout"
-          element={
-            <RequireAuth>
-              <Checkout />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/confirmation"
-          element={
-            <RequireAuth>
-              <Confirmation />
-            </RequireAuth>
-          }
-        />
+          {/* Protected */}
+          <Route
+            path="/member"
+            element={
+              <RequireAuth>
+                <MemberPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/checkout"
+            element={
+              <RequireAuth>
+                <Checkout />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/confirmation"
+            element={
+              <RequireAuth>
+                <Confirmation />
+              </RequireAuth>
+            }
+          />
 
-        {/* keep this LAST */}
-        <Route
-          path="*"
-          element={<div style={{ padding: 24 }}>Route not found: {window.location.pathname}</div>}
-        />
-      </Routes>
+          {/* keep this LAST */}
+          <Route
+            path="*"
+            element={<div style={{ padding: 24 }}>Route not found: {window.location.pathname}</div>}
+          />
+        </Routes>
+      </Suspense>
       <Footer />
     </BrowserRouter>
   );
