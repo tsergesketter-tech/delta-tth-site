@@ -13,6 +13,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import "./styles/evergage.css";
 import LoginCard, { useAuth } from "./components/LoginCard";
+import AgentAssist from "./pages/AgentAssist"; // Import directly (not lazy) to debug
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import("./pages/Home"));
@@ -25,7 +26,6 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const Confirmation = lazy(() => import("./pages/Confirmation"));
 const StayDetail = lazy(() => import("./pages/StayDetail"));
 const DestinationType = lazy(() => import("./pages/DestinationType"));
-const AgentAssist = lazy(() => import("./pages/AgentAssist"));
 
 // Loading fallback component
 function PageLoader() {
