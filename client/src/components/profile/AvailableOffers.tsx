@@ -144,7 +144,11 @@ export default function AvailableOffers() {
       }
 
       // Success - add to enrolled set
-      setEnrolledPromotions(prev => new Set([...prev, promoId]));
+      setEnrolledPromotions(prev => {
+        const next = new Set(prev);
+        next.add(promoId);
+        return next;
+      });
       console.log('Successfully enrolled in promotion:', promo.name);
     } catch (e: unknown) {
       console.error('Enrollment error:', e);
