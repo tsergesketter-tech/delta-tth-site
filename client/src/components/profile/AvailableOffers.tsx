@@ -653,5 +653,3 @@ function PromoCard({ p, onEnroll, enrolledPromotions }: {
     </div>
   );
 }
-
-export {};
