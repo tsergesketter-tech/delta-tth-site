@@ -11,7 +11,6 @@ import type { MemberProfile as UIProfile } from "../types/member";
 import WalletSummary from "../components/profile/WalletSummary";
 import VouchersList from "../components/profile/VouchersList";
 import BadgesGrid from "../components/profile/BadgesGrid";
-import UpcomingStays from "../components/profile/UpcomingStays";
 import PartnerShortcuts from "../components/profile/PartnerShortcuts";
 import EngagementTrail from "../components/profile/EngagementTrail";
 
@@ -97,12 +96,9 @@ export default function MemberPage() {
               />
             </section>
 
-            {/* Row 1: Upcoming + Wallet */}
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-6" aria-labelledby="plans-and-wallet">
-              <h2 id="plans-and-wallet" className="sr-only">Bookings and Wallet</h2>
-              <div className="md:col-span-2">
-                <UpcomingStays />
-              </div>
+            {/* Row 1: Wallet */}
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-6" aria-labelledby="wallet-section">
+              <h2 id="wallet-section" className="sr-only">Wallet</h2>
               <div>
                 <WalletSummary />
               </div>

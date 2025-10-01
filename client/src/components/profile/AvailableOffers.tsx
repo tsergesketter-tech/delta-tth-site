@@ -97,6 +97,8 @@ export default function AvailableOffers() {
   const [error, setError] = useState<string | null>(null);
   const [promos, setPromos] = useState<Promotion[]>([]);
   const [lastResponse, setLastResponse] = useState<any>(null);
+  const [enrolledPromotions, setEnrolledPromotions] = useState<Set<string>>(new Set());
+  const [enrolling, setEnrolling] = useState<string | null>(null);
 
   const [filters, setFilters] = useState<Filters>({
     q: "",
@@ -112,6 +114,45 @@ export default function AvailableOffers() {
     fetchPromotions(memberId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function enrollInPromotion(promo: Promotion) {
+    const promoId = promo.id ?? promo.name ?? '';
+    if (!promoId) {
+      console.error('Cannot enroll: promotion has no ID or name');
+      return;
+    }
+
+    setEnrolling(promoId);
+    try {
+      const res = await fetch('/api/loyalty/enroll-promotion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          program: PROGRAM_NAME,
+          membershipNumber: memberId,
+          promotionName: promo.name,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        const msg = data?.message || data?.[0]?.message || `HTTP ${res.status}`;
+        console.error('Enrollment failed:', msg);
+        alert(`Failed to enroll: ${msg}`);
+        return;
+      }
+
+      // Success - add to enrolled set
+      setEnrolledPromotions(prev => new Set([...prev, promoId]));
+      console.log('Successfully enrolled in promotion:', promo.name);
+    } catch (e: unknown) {
+      console.error('Enrollment error:', e);
+      alert(e instanceof Error ? e.message : String(e));
+    } finally {
+      setEnrolling(null);
+    }
+  }
 
   async function fetchPromotions(member: string) {
     setLoading(true);
@@ -404,7 +445,12 @@ export default function AvailableOffers() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filtered.map((p) => (
-                  <PromoCard key={p.id ?? p.name} p={p as any} />
+                  <PromoCard
+                    key={p.id ?? p.name}
+                    p={p as any}
+                    onEnroll={enrollInPromotion}
+                    enrolledPromotions={enrolledPromotions}
+                  />
                 ))}
               </div>
             </>
@@ -527,67 +573,78 @@ function EmptyState({
   );
 }
 
-function PromoCard({ p }: { p: Promotion & any }) {
-  const starts =
-    p.startDate && new Date(p.startDate).toLocaleDateString(undefined);
-  const ends = p.endDate && new Date(p.endDate).toLocaleDateString(undefined);
-
-  // chips
-  const chips: string[] = [];
-  if (p.__type) chips.push(p.__type);
-  if (p.__partner) chips.push(p.__partner);
-  if (p.__earnBucket) chips.push(`${p.__earnBucket} earn`);
-  if (p.enrollmentRequired) chips.push("Enrollment required");
+function PromoCard({ p, onEnroll, enrolledPromotions }: {
+  p: Promotion & any;
+  onEnroll: (promo: Promotion) => void;
+  enrolledPromotions: Set<string>;
+}) {
+  const ends = p.endDate && new Date(p.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const isEnrolled = enrolledPromotions.has(p.id ?? p.name ?? '');
 
   return (
-    <div className="bg-white border rounded-xl overflow-hidden shadow-sm flex flex-col">
+    <div className="bg-white border border-gray-300 rounded-lg overflow-hidden shadow-sm flex flex-col">
       {p.imageUrl ? (
         <img
           src={p.imageUrl}
           alt={p.name ?? "Promotion image"}
-          className="w-full h-40 object-cover"
+          className="w-full h-48 object-cover"
         />
       ) : (
-        <div className="w-full h-40 bg-gradient-to-br from-indigo-100 to-purple-100" />
+        <div className="w-full h-48 bg-gradient-to-br from-purple-400 via-pink-400 to-red-400 flex items-center justify-center">
+          <div className="text-white text-center px-4">
+            <div className="text-4xl font-bold mb-2">{p.name?.split(' ')[0] || 'OFFER'}</div>
+            <div className="text-lg font-semibold">BONUS MILES</div>
+          </div>
+        </div>
       )}
 
-      <div className="p-4 flex-1 flex flex-col">
-        <h3 className="text-lg font-semibold mb-1 line-clamp-2">
+      <div className="p-5 flex-1 flex flex-col">
+        <h3 className="text-xl font-bold text-blue-900 mb-3 line-clamp-2">
           {p.name ?? "Promotion"}
         </h3>
         {p.description && (
-          <p className="text-sm text-gray-600 mb-3 line-clamp-3">
+          <p className="text-sm text-gray-700 mb-4 line-clamp-3">
             {p.description}
           </p>
         )}
 
-        {chips.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-3">
-            {chips.map((c) => (
-              <span
-                key={c}
-                className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700"
-              >
-                {c}
-              </span>
-            ))}
+        {ends && (
+          <div className="mb-4">
+            <a href="#" className="text-blue-600 hover:underline text-sm font-medium">
+              Details & Terms
+            </a>
+            <div className="text-xs text-gray-600 mt-1">
+              Enroll by {ends}
+            </div>
           </div>
         )}
 
-        <div className="text-xs text-gray-500 mt-auto">
-          {starts && <span>Starts: {starts}</span>}
-          {starts && ends && <span> • </span>}
-          {ends && <span>Ends: {ends}</span>}
-        </div>
-      </div>
-
-      <div className="px-4 py-3 border-t bg-gray-50 flex items-center justify-between">
-        <button className="text-indigo-600 text-sm font-medium hover:underline">
-          View details
-        </button>
-        <button className="bg-indigo-600 text-white text-sm font-semibold px-3 py-1.5 rounded-md hover:bg-indigo-700">
-          Enroll
-        </button>
+        {!isEnrolled ? (
+          <button
+            onClick={() => onEnroll(p)}
+            className="mt-auto bg-white border-2 border-blue-900 text-blue-900 text-sm font-bold px-6 py-2.5 rounded hover:bg-blue-50 transition-colors"
+          >
+            LEARN MORE
+          </button>
+        ) : (
+          <div className="mt-auto border-2 border-blue-900 rounded bg-white p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-12 h-12 rounded-full border-2 border-blue-900 bg-white flex items-center justify-center">
+                <svg className="w-7 h-7 text-blue-900" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <div className="font-bold text-blue-900 text-base mb-1">
+                  Congratulations, Theodore! You're Enrolled.
+                </div>
+                <div className="text-sm text-gray-700">
+                  Track your progress and find additional details in your Currently Enrolled Promotions.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

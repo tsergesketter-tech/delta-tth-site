@@ -1081,6 +1081,69 @@ router.get('/member/:membershipNumber/enrolled-promotions', async (req, res) => 
   }
 });
 
+// POST /api/loyalty/enroll-promotion - Enroll member in a promotion
+router.post('/enroll-promotion', async (req, res) => {
+  try {
+    const {
+      program = 'Delta SkyMiles',
+      membershipNumber,
+      promotionName,
+    } = req.body ?? {};
+
+    console.log(`[loyalty/enroll-promotion] Enrolling member ${membershipNumber} in promotion: ${promotionName}`);
+
+    if (!membershipNumber || !promotionName) {
+      return res.status(400).json({
+        message: 'membershipNumber and promotionName are required'
+      });
+    }
+
+    // Call Salesforce Loyalty API to enroll in promotion
+    // Endpoint: /services/data/v65.0/connect/loyalty/programs/{programName}/program-processes/Enroll Promotion
+    const path = `/services/data/v65.0/connect/loyalty/programs/${encodeURIComponent(program)}/program-processes/Enroll%20Promotion`;
+
+    const processParameters = [{
+      MembershipNumber: membershipNumber,
+      PromotionName: promotionName
+    }];
+
+    console.log(`[loyalty/enroll-promotion] Calling Salesforce API: ${path}`);
+    console.log(`[loyalty/enroll-promotion] Parameters:`, processParameters);
+
+    const response = await sfFetch(path, {
+      method: 'POST',
+      body: JSON.stringify({ processParameters }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const msg = data?.[0]?.message || data?.message || `HTTP ${response.status}`;
+      console.error(`[loyalty/enroll-promotion] Enrollment failed:`, msg);
+      return res.status(response.status).json({
+        message: msg,
+        raw: data
+      });
+    }
+
+    console.log(`[loyalty/enroll-promotion] Successfully enrolled in promotion`);
+    console.log(`[loyalty/enroll-promotion] Response:`, JSON.stringify(data, null, 2));
+
+    res.json({
+      success: true,
+      message: `Successfully enrolled in ${promotionName}`,
+      data
+    });
+
+  } catch (error: any) {
+    console.error(`[loyalty/enroll-promotion] Error:`, error.message);
+    res.status(500).json({
+      message: 'Failed to enroll in promotion',
+      details: error.message
+    });
+  }
+});
+
 // Get engagement trail progress for a specific promotion
 router.get('/member/:membershipNumber/engagement-trail/:promotionId', async (req, res) => {
   try {
