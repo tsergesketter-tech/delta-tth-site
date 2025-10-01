@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useEffect, useMemo, useState } from "react";
 import { MOCK_PROMOTIONS } from "../../data/mockPromotions";
 import { DEMO_MEMBER } from "../../constants/loyalty";
