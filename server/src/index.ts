@@ -10,6 +10,7 @@ import loyaltyRoutes from "./routes/loyalty";
 import staysRoutes from "./routes/stays";
 import authRoutes from "./routes/auth";
 import bookingsRoutes from "./routes/bookings";
+import agentforceRoutes from "./routes/agentforce";
 
 // ---------- .env loading (repo root + server/.env override) ----------
 function findRepoRoot(startDir: string): string {
@@ -103,6 +104,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/loyalty", loyaltyRoutes);
 app.use("/api/stays", staysRoutes);
 app.use("/api/bookings", bookingsRoutes);
+app.use("/api/agentforce", agentforceRoutes);
 
 // Routes inspector (debug)
 app.get("/api/__routes", (_req, res) => {

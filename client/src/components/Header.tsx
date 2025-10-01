@@ -41,6 +41,9 @@ export default function Header() {
           <NavLink to="/credit-cards" className={navClass}>
             SkyMiles
           </NavLink>
+          <NavLink to="/agent" className={navClass}>
+            DIGITAL AGENT
+          </NavLink>
           <NavLink to="/help" className={navClass}>
             Need Help?
           </NavLink>

@@ -23,6 +23,7 @@ import Confirmation from "./pages/Confirmation";
 import StayDetail from "./pages/StayDetail";
 import DestinationType from "./pages/DestinationType";
 import LoginCard, { useAuth } from "./components/LoginCard";
+import AgentAssist from "./pages/AgentAssist";
 
 // --- Protect routes ---
 // --- Protect routes ---
@@ -82,6 +83,7 @@ export default function App() {
         <Route path="/destination-type" element={<DestinationType />} />
         <Route path="/promotions" element={<Promotions />} />
         <Route path="/credit-cards" element={<CreditCards />} />
+        <Route path="/agent" element={<AgentAssist />} />
         <Route path="/search" element={<SearchResults />} />
         <Route path="/return-flights" element={<ReturnFlights />} />
         <Route path="/stay/:id" element={<StayDetail />} />
