@@ -72,68 +72,13 @@ export default function DestinationType() {
     setLoading(true);
 
     try {
-      // Send preference data to MCP/Evergage
-      if (window.SalesforceInteractions || window.Evergage) {
-        const SDK = window.SalesforceInteractions || window.Evergage;
-        
-        console.log('🎯 Sending travel preference to Evergage:', {
-          travelType: travelType.id,
-          name: travelType.name,
-          heroImage: travelType.heroImage
-        });
-
-        // Debug available SDK methods
-        console.log('📋 Available SDK methods:', Object.keys(SDK));
-        
-        try {
-          // Send event with user attributes
-          SDK.sendEvent({
-            interaction: {
-              name: 'selectTravelPreference',
-              travelType: travelType.id,
-              travelTypeName: travelType.name,
-              preferredKeywords: travelType.keywords,
-              heroImage: travelType.heroImage,
-              timestamp: new Date().toISOString()
-            },
-            user: {
-              attributes: {
-                travelPreference: travelType.id,
-                preferredHeroImage: travelType.heroImage,
-                travelKeywords: travelType.keywords.join(','),
-                preferenceUpdatedAt: new Date().toISOString()
-              }
-            }
-          });
-          console.log('✅ Event sent successfully');
-
-          // Set user attributes using available method
-          if (typeof SDK.setUserAttribute === 'function') {
-            SDK.setUserAttribute('travelPreference', travelType.id);
-            SDK.setUserAttribute('preferredHeroImage', travelType.heroImage);
-            SDK.setUserAttribute('travelKeywords', travelType.keywords.join(','));
-            console.log('✅ User attributes set via setUserAttribute');
-          } else if (typeof SDK.setUser === 'function') {
-            SDK.setUser({
-              attributes: {
-                travelPreference: travelType.id,
-                preferredHeroImage: travelType.heroImage,
-                travelKeywords: travelType.keywords.join(',')
-              }
-            });
-            console.log('✅ User attributes set via setUser');
-          } else {
-            console.log('ℹ️ No user attribute methods available, relying on sendEvent');
-          }
-
-          console.log('✅ Travel preference data sent to Evergage');
-        } catch (sdkError) {
-          console.error('❌ Error calling Evergage SDK:', sdkError);
-          throw sdkError;
-        }
-      } else {
-        console.warn('⚠️ Evergage SDK not found - preference not sent');
-      }
+      // Travel preference tracking (can be integrated with analytics)
+      console.log('🎯 Travel preference selected:', {
+        travelType: travelType.id,
+        name: travelType.name,
+        heroImage: travelType.heroImage,
+        keywords: travelType.keywords
+      });
 
       // Store in localStorage as backup
       localStorage.setItem('travelPreference', JSON.stringify({
@@ -244,10 +189,3 @@ export default function DestinationType() {
   );
 }
 
-// Declare global types for TypeScript
-declare global {
-  interface Window {
-    SalesforceInteractions?: any;
-    Evergage?: any;
-  }
-}

@@ -2,62 +2,6 @@ import React from 'react';
 import SearchBar from './SearchBar';
 
 const Hero = () => {
-  // Handle background image updates from Evergage
-  const handleEvergageBackgroundUpdate = (imageUrl: string) => {
-    const heroSection = document.getElementById('hero-section');
-    if (heroSection) {
-      heroSection.style.backgroundImage = `url('${imageUrl}')`;
-    }
-  };
-
-  // Expose function globally for Evergage to call
-  React.useEffect(() => {
-    (window as any).updateHeroBackground = handleEvergageBackgroundUpdate;
-    return () => {
-      delete (window as any).updateHeroBackground;
-    };
-  }, []);
-
-  // Watch for Evergage changes and auto-update background
-  React.useEffect(() => {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'childList' || mutation.type === 'attributes') {
-          // Check if personalization zone was modified
-          const personalizationZone = document.getElementById('hero-personalizable-zone');
-          if (personalizationZone) {
-            // Look for background image data attribute
-            const bgImage = personalizationZone.getAttribute('data-bg-image');
-            if (bgImage) {
-              handleEvergageBackgroundUpdate(bgImage);
-            }
-
-            // Also check for a hidden element with the background URL
-            const bgElement = personalizationZone.querySelector('[data-background-url]');
-            if (bgElement) {
-              const bgUrl = bgElement.getAttribute('data-background-url');
-              if (bgUrl) {
-                handleEvergageBackgroundUpdate(bgUrl);
-              }
-            }
-          }
-        }
-      });
-    });
-
-    // Observe the entire hero section for changes
-    const heroSection = document.getElementById('hero-section');
-    if (heroSection) {
-      observer.observe(heroSection, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['data-bg-image', 'data-background-url']
-      });
-    }
-
-    return () => observer.disconnect();
-  }, []);
 
   return (
     <div className="w-full">
@@ -69,7 +13,7 @@ const Hero = () => {
       {/* Hero Banner Section */}
       <section
         id="hero-section"
-        className="relative w-full bg-cover bg-center evergage-hero-section"
+        className="relative w-full bg-cover bg-center"
         style={{
           backgroundImage: "url('/images/kauai.png')",
           height: '500px'
@@ -164,12 +108,6 @@ const Hero = () => {
           </div>
         </div>
 
-        {/* Evergage injection point for custom content */}
-        <div
-          id="evergage-custom-content"
-          className="evergage-zone"
-          style={{ display: 'none' }}
-        ></div>
       </section>
     </div>
   );

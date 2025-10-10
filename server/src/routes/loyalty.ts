@@ -1060,6 +1060,7 @@ router.get('/member/:membershipNumber/enrolled-promotions', async (req, res) => 
       eligibility: promo.memberEligibilityCategory,
       enrollmentRequired: promo.promotionEnrollmentRqr,
       imageUrl: promo.promotionImageUrl,
+      promotionConfiguration: promo.promotionConfiguration, // Include PromotionConfiguration for multi-step promotion detection
       // Keep raw data for debugging
       _raw: promo
     }));

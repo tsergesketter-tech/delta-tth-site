@@ -11,12 +11,13 @@ import {
 import React, { ReactNode, lazy, Suspense } from "react";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import "./styles/evergage.css";
+import { DataCloudProvider } from "./components/DataCloudProvider";
 import LoginCard, { useAuth } from "./components/LoginCard";
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import("./pages/Home"));
 const Promotions = lazy(() => import("./pages/Promotions"));
+const Recommendations = lazy(() => import("./pages/Recommendations"));
 const MemberPage = lazy(() => import("./pages/Member"));
 const CreditCards = lazy(() => import("./pages/CreditCardNew"));
 const SearchResults = lazy(() => import("./pages/SearchResults"));
@@ -26,6 +27,7 @@ const Confirmation = lazy(() => import("./pages/Confirmation"));
 const StayDetail = lazy(() => import("./pages/StayDetail"));
 const DestinationType = lazy(() => import("./pages/DestinationType"));
 const AgentAssist = lazy(() => import("./pages/AgentAssist"));
+const Wallet = lazy(() => import("./pages/Wallet"));
 
 // Loading fallback component
 function PageLoader() {
@@ -90,54 +92,65 @@ function LoginPage() {
 export default function App() {
   return (
     <BrowserRouter>
-      <Header />
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          {/* Public */}
-          <Route path="/" element={<Home />} />
-          <Route path="/destination-type" element={<DestinationType />} />
-          <Route path="/promotions" element={<Promotions />} />
-          <Route path="/credit-cards" element={<CreditCards />} />
-          <Route path="/agent" element={<AgentAssist />} />
-          <Route path="/search" element={<SearchResults />} />
-          <Route path="/return-flights" element={<ReturnFlights />} />
-          <Route path="/stay/:id" element={<StayDetail />} />
-          <Route path="/login" element={<LoginPage />} />
+      <DataCloudProvider tenantId="6b13de41-2e5c-4e5d-bd23-fa67b0bf66a4">
+        <Header />
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            {/* Public */}
+            <Route path="/" element={<Home />} />
+            <Route path="/destination-type" element={<DestinationType />} />
+            <Route path="/promotions" element={<Promotions />} />
+            <Route path="/recommendations" element={<Recommendations />} />
+            <Route path="/credit-cards" element={<CreditCards />} />
+            <Route path="/agent" element={<AgentAssist />} />
+            <Route path="/search" element={<SearchResults />} />
+            <Route path="/return-flights" element={<ReturnFlights />} />
+            <Route path="/stay/:id" element={<StayDetail />} />
+            <Route path="/login" element={<LoginPage />} />
 
-          {/* Protected */}
-          <Route
-            path="/member"
-            element={
-              <RequireAuth>
-                <MemberPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/checkout"
-            element={
-              <RequireAuth>
-                <Checkout />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/confirmation"
-            element={
-              <RequireAuth>
-                <Confirmation />
-              </RequireAuth>
-            }
-          />
+            {/* Protected */}
+            <Route
+              path="/member"
+              element={
+                <RequireAuth>
+                  <MemberPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/wallet"
+              element={
+                <RequireAuth>
+                  <Wallet />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/checkout"
+              element={
+                <RequireAuth>
+                  <Checkout />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/confirmation"
+              element={
+                <RequireAuth>
+                  <Confirmation />
+                </RequireAuth>
+              }
+            />
 
-          {/* keep this LAST */}
-          <Route
-            path="*"
-            element={<div style={{ padding: 24 }}>Route not found: {window.location.pathname}</div>}
-          />
-        </Routes>
-      </Suspense>
-      <Footer />
+            {/* keep this LAST */}
+            <Route
+              path="*"
+              element={<div style={{ padding: 24 }}>Route not found: {window.location.pathname}</div>}
+            />
+          </Routes>
+        </Suspense>
+        <Footer />
+      </DataCloudProvider>
     </BrowserRouter>
   );
 }

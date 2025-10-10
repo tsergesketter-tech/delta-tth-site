@@ -26,46 +26,264 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>Delta SkyMiles - Fly the World with Delta</title>
-    
-    <!-- Evergage/MCP SDK -->
-    <script type="text/javascript" src="//cdn.evgnet.com/beacon/tsergesketter523012158/tth_site/scripts/evergage.min.js"></script>
-    
-    <!-- Evergage Initialization -->
-    <script type="text/javascript">
-      // Wait for Evergage to load, then initialize
-      window.addEventListener('load', function() {
-        if (window.SalesforceInteractions || window.Evergage) {
-          const SDK = window.SalesforceInteractions || window.Evergage;
-          console.log('✅ Evergage SDK loaded successfully');
-          
-          // Initialize tracking
-          SDK.init({
-            cookieDomain: window.location.hostname,
-            trackAnonymousVisitors: true
-          });
-        } else {
-          console.warn('⚠️ Evergage SDK failed to load');
-        }
-      });
-    </script>
   </head>
   <body>
     <script type="text/javascript">
+    // Load Data Cloud SDK first, then embedded messaging (following working pattern)
+    function loadDataCloudSDK() {
+      return new Promise((resolve, reject) => {
+        console.log('🌐 Loading Data Cloud SDK script...');
+        const script = document.createElement('script');
+        script.src = 'https://cdn.c360a.salesforce.com/beacon/c360a/6b13de41-2e5c-4e5d-bd23-fa67b0bf66a4/scripts/c360a.min.js';
+        script.async = true;
+        script.defer = true;
+        
+        script.onload = () => {
+          console.log('✅ Data Cloud SDK script loaded');
+          resolve();
+        };
+        
+        script.onerror = () => {
+          console.error('❌ Failed to load Data Cloud SDK script');
+          reject(new Error('Failed to load Data Cloud SDK script'));
+        };
+        
+        document.head.appendChild(script);
+      });
+    }
+    
+    function checkForSalesforceInteractions() {
+      return new Promise((resolve) => {
+        const checkInterval = setInterval(() => {
+          if (window.SalesforceInteractions && typeof window.SalesforceInteractions.getAnonymousId === 'function') {
+            console.log('🌐 SalesforceInteractions found and ready with getAnonymousId');
+            clearInterval(checkInterval);
+            resolve();
+          } else {
+            console.log('⏳ SalesforceInteractions not yet available. Checking again in 500ms...');
+          }
+        }, 500);
+      });
+    }
+    
     function initEmbeddedMessaging() {
       try {
+        console.log('🤖 Initializing embedded messaging...');
         embeddedservice_bootstrap.settings.language = 'en_US';
+        
         embeddedservice_bootstrap.init(
           '00Dao00000Yz1Wx',
           'Agent_Web_Deployment',
           'https://deltaloyalty-demo.my.site.com/ESWAgentWebDeployment1749608334404',
           { scrt2URL: 'https://deltaloyalty-demo.my.salesforce-scrt.com' }
         );
+        
+        // Wait for prechat API to be ready and set device ID
+        const checkPrechatAPIReady = () => {
+          if (window.embeddedservice_bootstrap?.prechatAPI?.setHiddenPrechatFields) {
+            console.log('✅ Prechat API is ready, now checking SalesforceInteractions initialization...');
+            
+            // First, ensure SalesforceInteractions is properly initialized
+            const initializeSalesforceSDK = () => {
+              try {
+                console.log('🔧 Initializing SalesforceInteractions SDK...');
+                
+                // Check if SalesforceInteractions has an init method
+                if (typeof window.SalesforceInteractions.init === 'function') {
+                  console.log('📋 Calling SalesforceInteractions.init()...');
+                  window.SalesforceInteractions.init({
+                    cookieDomain: window.location.hostname,
+                    consent: true,
+                    debug: true
+                  });
+                }
+                
+                // Wait for SDK to generate device ID
+                let attempts = 0;
+                const maxAttempts = 50;
+                const checkDeviceId = () => {
+                  attempts++;
+                  const deviceId = window.SalesforceInteractions.getAnonymousId();
+                  
+                  console.log(`🔍 Attempt ${attempts}: Checking device ID:`, {
+                    deviceId: deviceId,
+                    type: typeof deviceId,
+                    length: deviceId ? deviceId.length : 0,
+                    isEmpty: !deviceId || deviceId === '',
+                    hasInit: typeof window.SalesforceInteractions.init === 'function'
+                  });
+                  
+                  if (deviceId && deviceId !== '') {
+                    console.log('✅ Real device ID obtained from SalesforceInteractions:', deviceId);
+                    
+                    // Set the device ID in prechat
+                    const prechatData = {
+                      deviceId: deviceId,
+                    };
+                    
+                    console.log('📡 Setting prechat fields:', prechatData);
+                    window.embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields(prechatData);
+                    
+                    console.log('✅ Device ID successfully configured for prechat!');
+                    console.log('🤖 Prechat API call completed successfully with deviceId:', deviceId);
+                    
+                    // Dispatch event with real device ID
+                    window.dispatchEvent(new CustomEvent('salesforceInteractionsReady', { 
+                      detail: { realSDK: true, deviceId: deviceId } 
+                    }));
+                    
+                    console.log('🎉 SalesforceInteractions initialization sequence completed!');
+                    
+                    // Add debugging for agent conversation to see what device ID is being used
+                    window.addEventListener('onEmbeddedMessageSent', (event) => {
+                      console.log('🔍 Agent message event - checking for device ID:', JSON.stringify(event.detail, null, 2));
+                      // Look for device IDs in the event
+                      const eventStr = JSON.stringify(event.detail);
+                      if (eventStr.includes('0PAao000006NG73GAG') || eventStr.includes('0PAao000006NH9ZGAW')) {
+                        console.log('🚨 FOUND PROBLEMATIC DEVICE ID IN AGENT EVENT!');
+                      }
+                    });
+                    
+                    window.addEventListener('onConversationEntryLogged', (event) => {
+                      console.log('🔍 Conversation entry logged - checking for device ID:', JSON.stringify(event.detail, null, 2));
+                      // Look for device IDs in the event
+                      const eventStr = JSON.stringify(event.detail);
+                      if (eventStr.includes('0PAao000006NG73GAG') || eventStr.includes('0PAao000006NH9ZGAW')) {
+                        console.log('🚨 FOUND PROBLEMATIC DEVICE ID IN CONVERSATION LOG!');
+                      }
+                    });
+                    return;
+                  }
+                  
+                  if (attempts >= maxAttempts) {
+                    console.log('⚠️ Max attempts reached, generating fallback device ID...');
+                    const fallbackDeviceId = 'sf-timeout-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    
+                    window.embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields({
+                      deviceId: fallbackDeviceId,
+                    });
+                    
+                    window.dispatchEvent(new CustomEvent('salesforceInteractionsReady', { 
+                      detail: { realSDK: false, deviceId: fallbackDeviceId } 
+                    }));
+                    
+                    console.log('🎉 SalesforceInteractions initialization completed with fallback ID:', fallbackDeviceId);
+                    return;
+                  }
+                  
+                  // Wait and try again
+                  setTimeout(checkDeviceId, 200);
+                };
+                
+                // Start checking for device ID
+                checkDeviceId();
+                
+              } catch (e) {
+                console.error('❌ Error initializing SalesforceInteractions:', e);
+                
+                // Generate error fallback
+                const errorDeviceId = 'error-generated-' + Date.now();
+                window.embeddedservice_bootstrap.prechatAPI.setHiddenPrechatFields({
+                  deviceId: errorDeviceId,
+                });
+                
+                window.dispatchEvent(new CustomEvent('salesforceInteractionsReady', { 
+                  detail: { realSDK: false, deviceId: errorDeviceId } 
+                }));
+              }
+            };
+            
+            // Initialize the SDK
+            initializeSalesforceSDK();
+            
+          } else {
+            console.log('⏳ Prechat API not yet available. Checking again in 500ms...');
+            setTimeout(checkPrechatAPIReady, 500);
+          }
+        };
+        
+        console.log('🤖 Waiting for prechat API to become available...');
+        checkPrechatAPIReady();
+        
       } catch (err) {
-        console.error('Error loading Embedded Messaging: ', err);
+        console.error('❌ Error loading Embedded Messaging:', err);
       }
     }
+    
+    function loadEmbeddedMessagingScript() {
+      console.log('🤖 SalesforceInteractions ready. Loading embedded messaging script...');
+      const script = document.createElement('script');
+      script.src = 'https://deltaloyalty-demo.my.site.com/ESWAgentWebDeployment1749608334404/assets/js/bootstrap.min.js';
+      script.onload = initEmbeddedMessaging;
+      script.onerror = () => {
+        console.error('❌ Failed to load embedded messaging script');
+      };
+      document.head.appendChild(script);
+    }
+    
+    // Initialize in proper sequence: Data Cloud SDK first, then embedded messaging
+    async function initializeSDKSequence() {
+      try {
+        await loadDataCloudSDK();
+        await checkForSalesforceInteractions();
+        loadEmbeddedMessagingScript();
+      } catch (error) {
+        console.error('❌ Error in SDK initialization sequence:', error);
+        // Fallback: still try to load embedded messaging
+        loadEmbeddedMessagingScript();
+      }
+    }
+    
+    // Add network request monitoring to debug device ID usage
+    const originalFetch = window.fetch;
+    window.fetch = function(...args) {
+      const [url, options] = args;
+      if (url && (url.includes('agentforce') || url.includes('prechat') || url.includes('conversation') || url.includes('embedded') || url.includes('salesforce'))) {
+        console.log('🌐 Network request intercepted:', {
+          url: url,
+          method: options?.method || 'GET',
+          body: options?.body,
+          headers: options?.headers
+        });
+        
+        // Check for problematic device ID in request body
+        if (options?.body) {
+          const bodyStr = typeof options.body === 'string' ? options.body : JSON.stringify(options.body);
+          if (bodyStr.includes('0PAao000006NG73GAG')) {
+            console.log('🚨 FOUND PROBLEMATIC DEVICE ID IN REQUEST BODY!', bodyStr);
+          }
+        }
+      }
+      
+      // Return original fetch and monitor response
+      const promise = originalFetch.apply(this, args);
+      
+      // Monitor response for problematic device ID
+      if (url && (url.includes('agentforce') || url.includes('prechat') || url.includes('conversation') || url.includes('embedded') || url.includes('salesforce'))) {
+        promise.then(response => {
+          if (response.clone) {
+            response.clone().text().then(responseText => {
+              if (responseText.includes('0PAao000006NG73GAG')) {
+                console.log('🚨 FOUND PROBLEMATIC DEVICE ID IN RESPONSE!', {
+                  url: url,
+                  responseText: responseText.substring(0, 1000) + (responseText.length > 1000 ? '...' : '')
+                });
+              }
+            }).catch(() => {
+              // Ignore response reading errors
+            });
+          }
+        }).catch(() => {
+          // Ignore fetch errors
+        });
+      }
+      
+      return promise;
+    };
+    
+    // Start the initialization sequence
+    initializeSDKSequence();
   </script>
-  <script type="text/javascript" src="https://deltaloyalty-demo.my.site.com/ESWAgentWebDeployment1749608334404/assets/js/bootstrap.min.js" onload="initEmbeddedMessaging()"></script>
     <div id="root"></div>
     <!--
       This HTML file is a template.

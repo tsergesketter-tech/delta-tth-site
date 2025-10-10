@@ -29,11 +29,14 @@ export default function Header() {
           <NavLink to="/member" className={navClass}>
             MY PROFILE
           </NavLink>
-          <NavLink to="/member" className={navClass}>
-            MY TRIPS
+          <NavLink to="/wallet" className={navClass}>
+            WALLET
           </NavLink>
           <NavLink to="/promotions" className={navClass}>
             OFFERS
+          </NavLink>
+          <NavLink to="/recommendations" className={navClass}>
+            RECOMMENDATIONS
           </NavLink>
           <NavLink to="/info" className={navClass}>
             Travel Info

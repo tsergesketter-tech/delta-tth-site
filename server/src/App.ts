@@ -3,6 +3,7 @@ import cors from "cors";
 import loyaltyRouter from "./routes/loyalty";
 import bookingsRouter from "./routes/bookings";
 import agentforceRouter from "./routes/agentforce";
+import personalizationRouter from "./routes/personalization";
 
 const app = express();
 
@@ -18,5 +19,6 @@ app.get("/api/__ping", (_req, res) => res.json({ ok: true }));
 app.use("/api/loyalty", loyaltyRouter);  // -> POST /api/loyalty/journals/accrual-stay
 app.use("/api/bookings", bookingsRouter); // -> POST /api/bookings
 app.use("/api/agentforce", agentforceRouter);
+app.use("/api/personalization", personalizationRouter); // -> POST /api/personalization
 
 export default app;
