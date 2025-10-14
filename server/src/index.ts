@@ -57,6 +57,7 @@ app.use((_req, res, next) => {
     "img-src 'self' data: https: cdn.evgnet.com cdn.evergage.com *.evgnet.com *.evergage.com *.us-7.evergage.com *.my.site.com deltaloyalty-demo.my.site.com cdn.c360a.salesforce.com *.salesforce.com; " +
     "font-src 'self' data: cdn.evgnet.com cdn.evergage.com *.evgnet.com *.evergage.com *.us-7.evergage.com *.my.site.com deltaloyalty-demo.my.site.com cdn.c360a.salesforce.com *.salesforce.com; " +
     "connect-src 'self' https: cdn.evgnet.com cdn.evergage.com *.evgnet.com *.evergage.com *.us-7.evergage.com *.my.site.com deltaloyalty-demo.my.site.com cdn.c360a.salesforce.com *.salesforce.com wss:; " +
+    "frame-src 'self' *.my.site.com deltaloyalty-demo.my.site.com *.salesforce.com; " +
     "frame-ancestors 'self' *.evergage.com *.us-7.evergage.com *.my.site.com deltaloyalty-demo.my.site.com cdn.c360a.salesforce.com *.salesforce.com"
   );
   
