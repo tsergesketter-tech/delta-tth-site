@@ -52,12 +52,12 @@ app.use((_req, res, next) => {
   // Content Security Policy - Allow Evergage/MCP domains
   res.setHeader('Content-Security-Policy', 
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.evgnet.com cdn.evergage.com *.evgnet.com *.evergage.com *.us-7.evergage.com; " +
-    "style-src 'self' 'unsafe-inline' cdn.evgnet.com cdn.evergage.com *.evgnet.com *.evergage.com *.us-7.evergage.com; " +
-    "img-src 'self' data: https: cdn.evgnet.com cdn.evergage.com *.evgnet.com *.evergage.com *.us-7.evergage.com; " +
-    "font-src 'self' data: cdn.evgnet.com cdn.evergage.com *.evgnet.com *.evergage.com *.us-7.evergage.com; " +
-    "connect-src 'self' https: cdn.evgnet.com cdn.evergage.com *.evgnet.com *.evergage.com *.us-7.evergage.com wss:; " +
-    "frame-ancestors 'self' *.evergage.com *.us-7.evergage.com"
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.evgnet.com cdn.evergage.com *.evgnet.com *.evergage.com *.us-7.evergage.com *.my.site.com deltaloyalty-demo.my.site.com cdn.c360a.salesforce.com *.salesforce.com; " +
+    "style-src 'self' 'unsafe-inline' cdn.evgnet.com cdn.evergage.com *.evgnet.com *.evergage.com *.us-7.evergage.com *.my.site.com deltaloyalty-demo.my.site.com cdn.c360a.salesforce.com *.salesforce.com; " +
+    "img-src 'self' data: https: cdn.evgnet.com cdn.evergage.com *.evgnet.com *.evergage.com *.us-7.evergage.com *.my.site.com deltaloyalty-demo.my.site.com cdn.c360a.salesforce.com *.salesforce.com; " +
+    "font-src 'self' data: cdn.evgnet.com cdn.evergage.com *.evgnet.com *.evergage.com *.us-7.evergage.com *.my.site.com deltaloyalty-demo.my.site.com cdn.c360a.salesforce.com *.salesforce.com; " +
+    "connect-src 'self' https: cdn.evgnet.com cdn.evergage.com *.evgnet.com *.evergage.com *.us-7.evergage.com *.my.site.com deltaloyalty-demo.my.site.com cdn.c360a.salesforce.com *.salesforce.com wss:; " +
+    "frame-ancestors 'self' *.evergage.com *.us-7.evergage.com *.my.site.com deltaloyalty-demo.my.site.com cdn.c360a.salesforce.com *.salesforce.com"
   );
   
   // Security headers
