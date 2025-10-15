@@ -5,24 +5,27 @@ import type { MemberProfile } from '../types/member';
 const DEFAULT_CREDIT_CARD_OFFER = 125000;
 
 /**
- * Fetch member profile and extract credit card offer value
- * @param membershipNumber - The member's membership number (e.g., "DL12345")
+ * Fetch credit card offer value using the dedicated endpoint
+ * @param membershipNumber - The member's membership number (e.g., "00000002")
  * @returns Promise<number> - The credit card offer value or default
  */
 export async function getCreditCardOfferValue(membershipNumber: string): Promise<number> {
   try {
-    const response = await fetch(`/api/loyalty/member-profile?membershipNumber=${encodeURIComponent(membershipNumber)}`);
+    const response = await fetch(`/api/loyalty/credit-card-offer?membershipNumber=${encodeURIComponent(membershipNumber)}`);
     
     if (!response.ok) {
-      console.warn(`Failed to fetch member profile for ${membershipNumber}: ${response.status}`);
+      console.warn(`Failed to fetch credit card offer for ${membershipNumber}: ${response.status}`);
       return DEFAULT_CREDIT_CARD_OFFER;
     }
 
-    const memberRecord = await response.json();
-    const memberProfile = mapSFMemberProfile(memberRecord);
+    const data = await response.json();
     
-    // Return the credit card offer value or default fallback
-    return memberProfile.creditCardOfferValue || DEFAULT_CREDIT_CARD_OFFER;
+    // Log if we're using fallback value
+    if (data.fallback) {
+      console.info(`Using fallback credit card offer for ${membershipNumber}`);
+    }
+    
+    return data.creditCardOfferValue || DEFAULT_CREDIT_CARD_OFFER;
   } catch (error) {
     console.error('Error fetching credit card offer value:', error);
     return DEFAULT_CREDIT_CARD_OFFER;

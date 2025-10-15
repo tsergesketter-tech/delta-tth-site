@@ -11,7 +11,7 @@ export interface Member {
  * Create a mock member session for development
  */
 export async function createMockSession(
-  membershipNumber: string = "DL12345",
+  membershipNumber: string = "00000002",
   memberId: string = "0lMKY000000LbUW2A0"
 ): Promise<Member> {
   const response = await fetch("/api/auth/mock-login", {
