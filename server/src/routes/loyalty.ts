@@ -108,94 +108,89 @@ router.post("/eligible-promotions", async (req, res) => {
 router.get("/member/:membershipNumber/vouchers", async (req, res) => {
   try {
     const { membershipNumber } = req.params;
+    const { voucherDefinition } = req.query; // Optional filter for voucher definition
     console.log(`[loyalty/vouchers] Fetching vouchers for member: ${membershipNumber}`);
 
     if (!membershipNumber) {
       return res.status(400).json({ error: "Member number is required" });
     }
 
-    // Use the correct Salesforce Loyalty API pattern for vouchers
+    // Use the updated Salesforce Loyalty API pattern for vouchers
     const programName = "Delta SkyMiles";
 
-    // Based on Salesforce Loyalty API documentation and user feedback
-    const endpointAttempts = [
-      `/services/data/v63.0/loyalty/programs/${encodeURIComponent(programName)}/members/${membershipNumber}/vouchers`,
-      `/services/data/v60.0/loyalty/programs/${encodeURIComponent(programName)}/members/${membershipNumber}/vouchers`,
-      `/services/data/v58.0/loyalty/programs/${encodeURIComponent(programName)}/members/${membershipNumber}/vouchers`,
-      // Connect API patterns as fallback
-      `/services/data/v63.0/connect/loyalty/programs/${encodeURIComponent(programName)}/members/${membershipNumber}/vouchers`,
-      `/services/data/v60.0/connect/loyalty/programs/${encodeURIComponent(programName)}/members/${membershipNumber}/vouchers`,
-      `/services/data/v58.0/connect/loyalty/programs/${encodeURIComponent(programName)}/members/${membershipNumber}/vouchers`
-    ];
-
-    let successfulResponse: Response | null = null;
-    let lastError: string | undefined;
+    // Updated API endpoint pattern based on user specification
+    const apiPath = `/services/data/v64.0/loyalty/programs/${encodeURIComponent(programName)}/members/${membershipNumber}/vouchers`;
     
-    for (const apiPath of endpointAttempts) {
-      console.log(`[loyalty/vouchers] Trying SF API: ${apiPath}`);
-      
-      const response = await sfFetch(apiPath, {
-        method: "GET",
-      });
-      
-      if (response.ok) {
-        console.log(`[loyalty/vouchers] Success with: ${apiPath}`);
-        successfulResponse = response;
-        break;
-      } else {
-        const errorText = await response.text();
-        console.warn(`[loyalty/vouchers] Failed ${response.status} for: ${apiPath} - ${errorText}`);
-        lastError = errorText;
-      }
-    }
+    console.log(`[loyalty/vouchers] Calling SF API: ${apiPath}`);
     
-    if (!successfulResponse) {
-      console.error(`[loyalty/vouchers] All API endpoints failed. Last error:`, lastError);
-      return res.status(404).json({ 
-        error: "Vouchers endpoint not found - check Salesforce API configuration",
-        details: lastError,
-        attemptedEndpoints: endpointAttempts
+    const response = await sfFetch(apiPath, {
+      method: "GET",
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[loyalty/vouchers] Failed ${response.status} for: ${apiPath} - ${errorText}`);
+      return res.status(response.status).json({ 
+        error: "Failed to fetch vouchers from Salesforce",
+        details: errorText,
+        endpoint: apiPath
       });
     }
 
-    const data = await successfulResponse.json();
+    const data = await response.json();
+    console.log(`[loyalty/vouchers] Raw SF response:`, JSON.stringify(data, null, 2));
     
-    // Transform Salesforce voucher data to match our UI format
-    const transformedVouchers = data.vouchers?.map((sfVoucher: any) => ({
-      id: sfVoucher.voucherId || sfVoucher.id,
-      // Use voucherDefinition as the main type display, fallback to mapped type
-      type: sfVoucher.voucherDefinition || mapVoucherType(sfVoucher.voucherType || sfVoucher.type),
-      code: sfVoucher.voucherCode || sfVoucher.code,
-      value: sfVoucher.remainingValue ?? sfVoucher.faceValue ?? sfVoucher.voucherValue,
-      currency: sfVoucher.currencyIsoCode || "USD",
-      expiresOn: sfVoucher.expirationDate || sfVoucher.expiryDate,
-      status: mapVoucherStatus(sfVoucher.status),
-      notes: sfVoucher.description || sfVoucher.reason,
-      // Keep original Salesforce fields for reference
-      originalType: sfVoucher.voucherType || sfVoucher.type,
+    // Transform Salesforce voucher data to match the new API structure
+    let vouchers = data.vouchers || [];
+    
+    // Apply voucher definition filter if provided
+    if (voucherDefinition) {
+      const filterTerms = Array.isArray(voucherDefinition) ? voucherDefinition : [voucherDefinition];
+      vouchers = vouchers.filter((voucher: any) => {
+        const voucherDef = voucher.voucherDefinition || '';
+        return filterTerms.some((term: any) => 
+          typeof term === 'string' && voucherDef.toLowerCase().includes(term.toLowerCase())
+        );
+      });
+    }
+
+    const transformedVouchers = vouchers.map((sfVoucher: any) => ({
+      id: sfVoucher.voucherId,
+      voucherNumber: sfVoucher.voucherNumber,
+      voucherCode: sfVoucher.voucherCode,
+      type: sfVoucher.type,
       voucherDefinition: sfVoucher.voucherDefinition,
-      // Additional SF fields for reference
-      _raw: {
-        programId: sfVoucher.loyaltyProgramId,
-        issuedDate: sfVoucher.issuedDate,
-        lastModifiedDate: sfVoucher.lastModifiedDate,
-        effectiveDate: sfVoucher.effectiveDate,
-        expirationDateTime: sfVoucher.expirationDateTime,
-        redeemedValue: sfVoucher.redeemedValue,
-        remainingValue: sfVoucher.remainingValue,
-        isVoucherPartiallyRedeemable: sfVoucher.isVoucherPartiallyRedeemable,
-        voucherNumber: sfVoucher.voucherNumber,
-      }
-    })) || [];
+      faceValue: sfVoucher.faceValue,
+      remainingValue: sfVoucher.remainingValue,
+      redeemedValue: sfVoucher.redeemedValue,
+      status: sfVoucher.status,
+      effectiveDate: sfVoucher.effectiveDate,
+      effectiveDateTime: sfVoucher.effectiveDateTime,
+      expirationDate: sfVoucher.expirationDate,
+      expirationDateTime: sfVoucher.expirationDateTime,
+      isVoucherDefinitionActive: sfVoucher.isVoucherDefinitionActive,
+      isVoucherPartiallyRedeemable: sfVoucher.isVoucherPartiallyRedeemable,
+      hasTimeBasedVoucherPeriod: sfVoucher.hasTimeBasedVoucherPeriod,
+      // Legacy fields for backward compatibility
+      value: sfVoucher.remainingValue ?? sfVoucher.faceValue,
+      currency: "USD", // Default currency
+      expiresOn: sfVoucher.expirationDate,
+      code: sfVoucher.voucherCode,
+      notes: `${sfVoucher.voucherDefinition} - ${sfVoucher.type}`,
+      // Keep original Salesforce fields for reference
+      _raw: sfVoucher
+    }));
 
     res.json({
+      voucherCount: data.voucherCount || transformedVouchers.length,
       vouchers: transformedVouchers,
-      totalCount: data.totalCount || transformedVouchers.length,
+      totalCount: data.voucherCount || transformedVouchers.length,
       _meta: {
         membershipNumber,
         program: programName,
         fetchedAt: new Date().toISOString(),
-        sourceApi: "salesforce-connect"
+        sourceApi: "salesforce-loyalty",
+        appliedFilters: voucherDefinition ? { voucherDefinition } : null
       }
     });
 

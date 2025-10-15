@@ -22,6 +22,8 @@ export default function WalletSection({
   onShowToast 
 }: WalletSectionProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6; // Show 6 items per page
   
   const {
     coreFilters,
@@ -65,6 +67,16 @@ export default function WalletSection({
     const filtered = filterWalletItems(items, filters);
     return sortWalletItems(filtered, filters.sortBy);
   }, [items, filters]);
+
+  // Paginate items
+  const paginatedItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return processedItems.slice(startIndex, endIndex);
+  }, [processedItems, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(processedItems.length / itemsPerPage);
+  const hasMultiplePages = totalPages > 1;
 
   const isEmpty = items.length === 0;
   const noResultsAfterFiltering = items.length > 0 && processedItems.length === 0;
@@ -134,19 +146,64 @@ export default function WalletSection({
                 <p className="text-gray-600">Try adjusting your search criteria or filters.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {processedItems.map((item) => (
-                  <WalletItemCard
-                    key={item.id}
-                    item={item}
-                    onAction={(action, itemId) => {
-                      // Handle actions here
-                      console.log(`Action ${action} on item ${itemId}`);
-                      onShowToast(`${action} action initiated for ${item.label}`);
-                    }}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {paginatedItems.map((item) => (
+                    <WalletItemCard
+                      key={item.id}
+                      item={item}
+                      onAction={(action, itemId) => {
+                        // Handle actions here
+                        console.log(`Action ${action} on item ${itemId}`);
+                        onShowToast(`${action} action initiated for ${item.label}`);
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* Pagination Controls */}
+                {hasMultiplePages && (
+                  <div className="mt-6 flex items-center justify-between border-t border-gray-200 pt-4">
+                    <div className="text-sm text-gray-700">
+                      Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, processedItems.length)} of {processedItems.length} items
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`px-3 py-2 text-sm font-medium rounded-md ${
+                              page === currentPage
+                                ? 'bg-indigo-600 text-white'
+                                : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      <button
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

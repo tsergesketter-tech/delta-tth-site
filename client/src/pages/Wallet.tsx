@@ -5,6 +5,7 @@ import { walletService } from '../services/walletService';
 import WalletSummary from '../components/wallet/WalletSummary';
 import WalletSection from '../components/wallet/WalletSection';
 import { DEMO_MEMBER } from '../constants/loyalty';
+import { VOUCHER_DEFINITION_FILTERS, type VoucherDefinitionFilter } from '../utils/vouchersApi';
 
 export default function WalletPage() {
   const {
@@ -19,29 +20,55 @@ export default function WalletPage() {
   } = useWalletStore();
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [selectedFilters, setSelectedFilters] = useState<VoucherDefinitionFilter[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     loadWalletData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadWalletData = async () => {
+  const loadWalletData = async (filters?: VoucherDefinitionFilter[]) => {
+    console.log('[Wallet] loadWalletData called with filters:', filters);
+    console.log('[Wallet] Using membership number:', DEMO_MEMBER.MEMBERSHIP_NUMBER);
+    
     setLoading(true);
     setError(null);
 
     try {
+      console.log('[Wallet] Starting to fetch wallet data...');
       const [itemsData, summaryData] = await Promise.all([
-        walletService.getWalletItems(DEMO_MEMBER.MEMBERSHIP_NUMBER),
+        filters && filters.length > 0 
+          ? walletService.getFilteredWalletItems(DEMO_MEMBER.MEMBERSHIP_NUMBER, filters)
+          : walletService.getWalletItems(DEMO_MEMBER.MEMBERSHIP_NUMBER),
         walletService.getWalletSummary(DEMO_MEMBER.MEMBERSHIP_NUMBER),
       ]);
+
+      console.log('[Wallet] Received items data:', itemsData);
+      console.log('[Wallet] Received summary data:', summaryData);
 
       setItems(itemsData);
       setSummary(summaryData);
     } catch (err: any) {
-      console.error('Failed to load wallet data:', err);
+      console.error('[Wallet] Failed to load wallet data:', err);
       setError(err.message || 'Failed to load wallet data');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFilterChange = (filter: VoucherDefinitionFilter) => {
+    const newFilters = selectedFilters.includes(filter)
+      ? selectedFilters.filter(f => f !== filter)
+      : [...selectedFilters, filter];
+    
+    setSelectedFilters(newFilters);
+    loadWalletData(newFilters);
+  };
+
+  const clearFilters = () => {
+    setSelectedFilters([]);
+    loadWalletData();
   };
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -50,7 +77,14 @@ export default function WalletPage() {
   };
 
   const coreItems = items.filter(item => item.category === 'CORE');
-  const certVoucherItems = items.filter(item => item.category === 'CERTS_VOUCHERS');
+  const certificateItems = items.filter(item => 
+    item.category === 'CERTS_VOUCHERS' && 
+    (item as any).voucherCategory === 'CERTIFICATES'
+  );
+  const voucherItems = items.filter(item => 
+    item.category === 'CERTS_VOUCHERS' && 
+    (item as any).voucherCategory === 'VOUCHERS'
+  );
   const partnerFinancialItems = items.filter(item => item.category === 'PARTNER_FINANCIAL');
 
   if (loading) {
@@ -124,7 +158,7 @@ export default function WalletPage() {
                 <h3 className="text-lg font-medium text-red-800">Unable to Load Wallet</h3>
                 <p className="text-red-700 mt-1">{error}</p>
                 <button 
-                  onClick={loadWalletData}
+                  onClick={() => loadWalletData()}
                   className="mt-3 bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700"
                 >
                   Try Again
@@ -162,21 +196,74 @@ export default function WalletPage() {
         {/* Summary */}
         <WalletSummary summary={summary} />
 
+        {/* Filters Section */}
+        <div className="mt-8 bg-white rounded-xl shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Voucher Filters</h2>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              {showFilters ? 'Hide Filters' : 'Show Filters'}
+            </button>
+          </div>
+          
+          {showFilters && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-3">
+                {Object.values(VOUCHER_DEFINITION_FILTERS).map((filter) => (
+                  <label key={filter} className="inline-flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedFilters.includes(filter)}
+                      onChange={() => handleFilterChange(filter)}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">{filter}</span>
+                  </label>
+                ))}
+              </div>
+              
+              {selectedFilters.length > 0 && (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600">
+                    Active filters: {selectedFilters.join(', ')}
+                  </span>
+                  <button
+                    onClick={clearFilters}
+                    className="text-sm text-red-600 hover:text-red-800"
+                  >
+                    Clear All
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Sections */}
         <div className="space-y-8 mt-8">
           <WalletSection
-            title="Core Delta Currencies"
-            description="Miles, MQDs, eCredits, and Gift Cards"
+            title="Credits"
+            description="E-Credits and Gift Cards"
             category="CORE"
             items={coreItems}
             onShowToast={showToast}
           />
 
           <WalletSection
-            title="Certificates & Vouchers"
-            description="Upgrade certificates, companion passes, and service vouchers"
+            title="Certificates"
+            description="Upgrade certificates and companion certificates"
             category="CERTS_VOUCHERS"
-            items={certVoucherItems}
+            items={certificateItems}
+            onShowToast={showToast}
+          />
+
+          <WalletSection
+            title="Vouchers"
+            description="Drink vouchers, SkyClub passes, and day passes"
+            category="CERTS_VOUCHERS"
+            items={voucherItems}
             onShowToast={showToast}
           />
 

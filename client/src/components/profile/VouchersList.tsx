@@ -8,6 +8,21 @@ const statusColors: Record<Voucher["status"], string> = {
   Expired: "bg-rose-100 text-rose-800",
 };
 
+// Helper function to map Salesforce status to legacy status
+function mapSalesforceStatusToLegacy(sfStatus: string): Voucher["status"] {
+  const status = sfStatus.toLowerCase();
+  
+  if (status === 'active' || status === 'available' || status === 'issued') {
+    return 'Active';
+  }
+  
+  if (status === 'used' || status === 'redeemed' || status === 'consumed') {
+    return 'Used';
+  }
+  
+  return 'Expired';
+}
+
 type VouchersListProps = {
   /** Set to true to use demo data instead of fetching from Salesforce */
   useDemoData?: boolean;
@@ -30,7 +45,23 @@ export default function VouchersList({ useDemoData = false }: VouchersListProps)
 
         // fetchMemberVouchers now handles session creation internally
         const response = await fetchMemberVouchers();
-        setVouchers(response.vouchers);
+        
+        // Transform SalesforceVoucher to legacy Voucher format
+        const transformedVouchers: Voucher[] = response.vouchers.map(sfVoucher => ({
+          id: sfVoucher.id,
+          type: sfVoucher.voucherDefinition,
+          code: sfVoucher.code,
+          value: sfVoucher.value,
+          currency: sfVoucher.currency,
+          expiresOn: sfVoucher.expiresOn,
+          status: mapSalesforceStatusToLegacy(sfVoucher.status),
+          notes: sfVoucher.notes,
+          originalType: sfVoucher.type,
+          voucherDefinition: sfVoucher.voucherDefinition,
+          _raw: sfVoucher._raw
+        }));
+        
+        setVouchers(transformedVouchers);
       } catch (err: any) {
         console.error('Failed to fetch vouchers:', err);
         setError(err.message || 'Failed to load vouchers');
