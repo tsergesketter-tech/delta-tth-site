@@ -5,27 +5,33 @@ import type { MemberProfile } from '../types/member';
 const DEFAULT_CREDIT_CARD_OFFER = 125000;
 
 /**
- * Fetch credit card offer value using the dedicated endpoint
+ * Fetch credit card offer value from member profile API
  * @param membershipNumber - The member's membership number (e.g., "00000002")
  * @returns Promise<number> - The credit card offer value or default
  */
 export async function getCreditCardOfferValue(membershipNumber: string): Promise<number> {
   try {
-    const response = await fetch(`/api/loyalty/credit-card-offer?membershipNumber=${encodeURIComponent(membershipNumber)}`);
+    const url = `/api/loyalty/members?program=${encodeURIComponent('Delta SkyMiles')}&membershipNumber=${encodeURIComponent(membershipNumber)}`;
+    const response = await fetch(url);
     
     if (!response.ok) {
-      console.warn(`Failed to fetch credit card offer for ${membershipNumber}: ${response.status}`);
+      console.warn(`Failed to fetch member profile for ${membershipNumber}: ${response.status}`);
       return DEFAULT_CREDIT_CARD_OFFER;
     }
 
-    const data = await response.json();
+    const memberData = await response.json();
     
-    // Log if we're using fallback value
-    if (data.fallback) {
-      console.info(`Using fallback credit card offer for ${membershipNumber}`);
+    // Extract Credit_Card_Offer_Value__c from the member record
+    const creditCardOfferValue = memberData?.additionalLoyaltyProgramMemberFields?.Credit_Card_Offer_Value__c;
+    
+    if (creditCardOfferValue && typeof creditCardOfferValue === 'number') {
+      console.info(`Found credit card offer value for ${membershipNumber}: ${creditCardOfferValue}`);
+      return creditCardOfferValue;
+    } else {
+      console.info(`No credit card offer value found for ${membershipNumber}, using default`);
+      return DEFAULT_CREDIT_CARD_OFFER;
     }
     
-    return data.creditCardOfferValue || DEFAULT_CREDIT_CARD_OFFER;
   } catch (error) {
     console.error('Error fetching credit card offer value:', error);
     return DEFAULT_CREDIT_CARD_OFFER;

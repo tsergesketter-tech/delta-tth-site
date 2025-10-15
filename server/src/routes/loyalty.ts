@@ -1236,56 +1236,6 @@ router.get('/member/:membershipNumber/engagement-trail/:promotionId', async (req
   }
 });
 
-/**
- * GET /api/loyalty/credit-card-offer
- * Query params:
- * - membershipNumber: string (required)
- * - program?: string (default 'Delta SkyMiles')
- * 
- * Returns the Credit_Card_Offer_Value__c for the member or default fallback
- */
-router.get("/credit-card-offer", async (req, res) => {
-  try {
-    const program = (req.query.program as string) || "Delta SkyMiles";
-    const membershipNumber = req.query.membershipNumber as string;
-
-    if (!membershipNumber) {
-      return res.status(400).json({ 
-        error: "Missing membershipNumber parameter" 
-      });
-    }
-
-    const member = await fetchMemberRecord(program, membershipNumber);
-
-    if (!member || typeof member !== "object") {
-      console.warn(`Member not found for membershipNumber: ${membershipNumber}`);
-      return res.json({ 
-        creditCardOfferValue: 125000, // Default fallback
-        fallback: true 
-      });
-    }
-
-    // Extract Credit_Card_Offer_Value__c from member record
-    const creditCardOfferValue = 
-      member?.additionalLoyaltyProgramMemberFields?.Credit_Card_Offer_Value__c || 125000;
-
-    res.json({ 
-      creditCardOfferValue,
-      fallback: false,
-      membershipNumber 
-    });
-
-  } catch (error: any) {
-    console.error('❌ Error fetching credit card offer:', error.message);
-    res.status(500).json({ 
-      error: 'Failed to fetch credit card offer',
-      details: error.message,
-      creditCardOfferValue: 125000, // Fallback on error
-      fallback: true
-    });
-  }
-});
-
 export default router;
 
 
