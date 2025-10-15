@@ -1,35 +1,6 @@
 // store/walletStore.ts
-import { create } from 'zustand';
-import { WalletItem, WalletFilters, WalletSummaryData, Status, EarnedOwedGiven } from '../types/wallet';
-
-interface WalletState {
-  // Data
-  items: WalletItem[];
-  summary: WalletSummaryData | null;
-  loading: boolean;
-  error: string | null;
-  
-  // Filters per category
-  coreFilters: WalletFilters;
-  certVoucherFilters: WalletFilters;
-  partnerFinancialFilters: WalletFilters;
-  
-  // Actions
-  setItems: (items: WalletItem[]) => void;
-  setSummary: (summary: WalletSummaryData) => void;
-  setLoading: (loading: boolean) => void;
-  setError: (error: string | null) => void;
-  
-  // Filter actions
-  updateCoreFilters: (filters: Partial<WalletFilters>) => void;
-  updateCertVoucherFilters: (filters: Partial<WalletFilters>) => void;
-  updatePartnerFinancialFilters: (filters: Partial<WalletFilters>) => void;
-  resetFilters: () => void;
-  
-  // Optimistic updates
-  updateItemStatus: (itemId: string, status: Status) => void;
-  removeItem: (itemId: string) => void;
-}
+import { useState, useCallback } from 'react';
+import { WalletItem, WalletFilters, WalletSummaryData, Status } from '../types/wallet';
 
 const defaultFilters: WalletFilters = {
   status: ["ACTIVE"],
@@ -38,55 +9,72 @@ const defaultFilters: WalletFilters = {
   search: "",
 };
 
-export const useWalletStore = create<WalletState>((set, get) => ({
-  // Initial state
-  items: [],
-  summary: null,
-  loading: false,
-  error: null,
+// Simple state management with React hooks
+export function useWalletStore() {
+  const [items, setItems] = useState<WalletItem[]>([]);
+  const [summary, setSummary] = useState<WalletSummaryData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  coreFilters: { ...defaultFilters },
-  certVoucherFilters: { ...defaultFilters },
-  partnerFinancialFilters: { ...defaultFilters },
-  
-  // Basic actions
-  setItems: (items) => set({ items }),
-  setSummary: (summary) => set({ summary }),
-  setLoading: (loading) => set({ loading }),
-  setError: (error) => set({ error }),
-  
-  // Filter actions
-  updateCoreFilters: (filters) => 
-    set(state => ({ 
-      coreFilters: { ...state.coreFilters, ...filters } 
-    })),
-  
-  updateCertVoucherFilters: (filters) => 
-    set(state => ({ 
-      certVoucherFilters: { ...state.certVoucherFilters, ...filters } 
-    })),
-  
-  updatePartnerFinancialFilters: (filters) => 
-    set(state => ({ 
-      partnerFinancialFilters: { ...state.partnerFinancialFilters, ...filters } 
-    })),
-  
-  resetFilters: () => set({
-    coreFilters: { ...defaultFilters },
-    certVoucherFilters: { ...defaultFilters },
-    partnerFinancialFilters: { ...defaultFilters },
-  }),
-  
+  // Filters per category
+  const [coreFilters, setCoreFilters] = useState<WalletFilters>({ ...defaultFilters });
+  const [certVoucherFilters, setCertVoucherFilters] = useState<WalletFilters>({ ...defaultFilters });
+  const [partnerFinancialFilters, setPartnerFinancialFilters] = useState<WalletFilters>({ ...defaultFilters });
+
+  // Filter update functions
+  const updateCoreFilters = useCallback((filters: Partial<WalletFilters>) => {
+    setCoreFilters(prev => ({ ...prev, ...filters }));
+  }, []);
+
+  const updateCertVoucherFilters = useCallback((filters: Partial<WalletFilters>) => {
+    setCertVoucherFilters(prev => ({ ...prev, ...filters }));
+  }, []);
+
+  const updatePartnerFinancialFilters = useCallback((filters: Partial<WalletFilters>) => {
+    setPartnerFinancialFilters(prev => ({ ...prev, ...filters }));
+  }, []);
+
+  const resetFilters = useCallback(() => {
+    setCoreFilters({ ...defaultFilters });
+    setCertVoucherFilters({ ...defaultFilters });
+    setPartnerFinancialFilters({ ...defaultFilters });
+  }, []);
+
   // Optimistic updates
-  updateItemStatus: (itemId, status) => 
-    set(state => ({
-      items: state.items.map(item => 
+  const updateItemStatus = useCallback((itemId: string, status: Status) => {
+    setItems(prevItems => 
+      prevItems.map(item => 
         item.id === itemId ? { ...item, status } : item
       )
-    })),
-  
-  removeItem: (itemId) => 
-    set(state => ({
-      items: state.items.filter(item => item.id !== itemId)
-    })),
-}));
+    );
+  }, []);
+
+  const removeItem = useCallback((itemId: string) => {
+    setItems(prevItems => prevItems.filter(item => item.id !== itemId));
+  }, []);
+
+  return {
+    // Data
+    items,
+    summary,
+    loading,
+    error,
+    
+    // Filters
+    coreFilters,
+    certVoucherFilters,
+    partnerFinancialFilters,
+    
+    // Actions
+    setItems,
+    setSummary,
+    setLoading,
+    setError,
+    updateCoreFilters,
+    updateCertVoucherFilters,
+    updatePartnerFinancialFilters,
+    resetFilters,
+    updateItemStatus,
+    removeItem,
+  };
+}

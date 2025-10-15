@@ -139,7 +139,7 @@ export default function WalletFilters({
               onClick={() => toggleSource(option.value)}
               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                 filters.source.includes(option.value)
-                  ? 'bg-green-600 text-white'
+                  ? 'bg-slate-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
