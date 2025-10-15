@@ -38,4 +38,5 @@ export type MemberProfile = {
   vouchersCount?: number;
   offersCount?: number;
   avatarUrl?: string;       // URL or data URI
+  creditCardOfferValue?: number;  // Credit card offer miles value
 };

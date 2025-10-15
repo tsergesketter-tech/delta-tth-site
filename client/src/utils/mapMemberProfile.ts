@@ -55,6 +55,10 @@ export function mapSFMemberProfile(sf: any): MemberProfile {
   const avatarUrl =
     sf?.additionalLoyaltyProgramMemberFields?.Avatar__c || "";
 
+  // Credit Card Offer Value
+  const creditCardOfferValue = 
+    sf?.additionalLoyaltyProgramMemberFields?.Credit_Card_Offer_Value__c || undefined;
+
   return {
     memberId: sf?.loyaltyProgramMemberId,
     membershipNumber,
@@ -70,6 +74,7 @@ export function mapSFMemberProfile(sf: any): MemberProfile {
     avatarUrl,
     vouchersCount,
     offersCount,
+    creditCardOfferValue,
     tier,
   };
 }

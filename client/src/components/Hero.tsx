@@ -1,7 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import SearchBar from './SearchBar';
+import { useAuth } from '../hooks/useAuth';
+import { getCreditCardOfferValue, formatCreditCardOffer } from '../utils/creditCardOffer';
 
 const Hero = () => {
+  const { member } = useAuth();
+  const [creditCardOffer, setCreditCardOffer] = useState<number>(125000); // Default fallback
+  const [isLoadingOffer, setIsLoadingOffer] = useState(false);
+
+  useEffect(() => {
+    async function fetchOfferValue() {
+      if (member?.membershipNumber) {
+        setIsLoadingOffer(true);
+        try {
+          const offerValue = await getCreditCardOfferValue(member.membershipNumber);
+          setCreditCardOffer(offerValue);
+        } catch (error) {
+          console.error('Failed to fetch credit card offer:', error);
+          // Keep default value
+        } finally {
+          setIsLoadingOffer(false);
+        }
+      }
+    }
+
+    fetchOfferValue();
+  }, [member?.membershipNumber]);
 
   return (
     <div className="w-full">
@@ -61,7 +85,11 @@ const Hero = () => {
                       </span>
                     </span>
                     <span className="ml-2 bg-gradient-to-r from-pink-400 to-purple-500 bg-clip-text text-transparent">
-                      125,000
+                      {isLoadingOffer ? (
+                        <span className="animate-pulse">125,000</span>
+                      ) : (
+                        formatCreditCardOffer(creditCardOffer)
+                      )}
                     </span>
                   </span>
                 </h1>

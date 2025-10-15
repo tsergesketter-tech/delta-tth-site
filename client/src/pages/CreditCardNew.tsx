@@ -1,10 +1,34 @@
 // client/src/pages/PaloniaCreditCards.tsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
+import { useAuth } from '../hooks/useAuth';
+import { getCreditCardOfferValue, formatCreditCardOffer } from '../utils/creditCardOffer';
 
 export default function DeltaCreditCards() {
+  const { member } = useAuth();
   const [tab, setTab] = useState<"personal" | "business">("personal");
   const [compare, setCompare] = useState<Record<string, boolean>>({});
+  const [creditCardOffer, setCreditCardOffer] = useState<number>(125000); // Default fallback
+  const [isLoadingOffer, setIsLoadingOffer] = useState(false);
   const year = useMemo(() => new Date().getFullYear(), []);
+
+  useEffect(() => {
+    async function fetchOfferValue() {
+      if (member?.membershipNumber) {
+        setIsLoadingOffer(true);
+        try {
+          const offerValue = await getCreditCardOfferValue(member.membershipNumber);
+          setCreditCardOffer(offerValue);
+        } catch (error) {
+          console.error('Failed to fetch credit card offer:', error);
+          // Keep default value
+        } finally {
+          setIsLoadingOffer(false);
+        }
+      }
+    }
+
+    fetchOfferValue();
+  }, [member?.membershipNumber]);
 
   const selectedCount = Object.values(compare).filter(Boolean).length;
   const compareHint =
@@ -171,7 +195,13 @@ export default function DeltaCreditCards() {
                 <div className="text-xs uppercase tracking-wide text-gray-500">Palonia® Business</div>
                 <h3 className="text-base font-extrabold leading-snug text-gray-900">Palonia Business® Credit Card</h3>
                 <p className="text-sm">
-                  <span className="block text-2xl font-bold tracking-tight text-gray-900">125,000</span>
+                  <span className="block text-2xl font-bold tracking-tight text-gray-900">
+                    {isLoadingOffer ? (
+                      <span className="animate-pulse">125,000</span>
+                    ) : (
+                      formatCreditCardOffer(creditCardOffer)
+                    )}
+                  </span>
                   <span className="text-gray-700">Bonus Points</span>
                 </p>
                 <p className="text-xs text-gray-500">
